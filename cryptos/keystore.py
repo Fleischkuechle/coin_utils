@@ -1,0 +1,897 @@
+#!/usr/bin/env python2
+# -*- mode: python -*-
+#
+# Electrum - lightweight Bitcoin client
+# Copyright (C) 2016  The Electrum developers with changes by pycryptotools developers
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation files
+# (the "Software"), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge,
+# publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+from unicodedata import normalize
+
+from .wallet_utils import pw_encode, pw_decode, hfu, InvalidPassword
+from .mnemonic import *
+from .deterministic import *
+from .main import *
+
+
+class KeyStore(object):
+    # from .coins_async.base import BaseCoin
+
+    def __init___original(self, coin, addresses=()):
+        self.coin = coin
+        self.addresses = list(addresses)
+        self.root_derivation = None
+        self.bip39_prefixes = ()
+        self.xtype = ""
+        self.electrum = False
+
+    def __init__(
+        self,
+        # coin: BaseCoin,
+        coin,
+        addresses: List[str] = [],
+    ):
+        """
+        Initializes a BIP32 keystore object.
+
+        This constructor sets up the keystore with the specified
+        cryptocurrency type, an optional list of addresses,
+        and initializes other attributes to their default values.
+
+        Args:
+            coin (str): The type of cryptocurrency for which to manage keys (e.g., 'BTC', 'ETH').
+            addresses (List[str], optional): An optional list of addresses to be associated with the keystore. Defaults to an empty list.
+        """
+        self.coin: BaseCoin = coin
+        self.addresses: List[str] = list(addresses)
+        self.root_derivation: Optional[str] = None
+        # self.bip39_prefixes: Tuple[str, str] = ()
+        self.bip39_prefixes: List[bytes] = []
+        self.xtype: str = ""
+        self.electrum: bool = False
+
+    def has_seed(self):
+        return False
+
+    def is_watching_only(self):
+        return False
+
+    def can_import(self):
+        return False
+
+    def set_xtype_original(self, xtype, electrum=False):
+        self.xtype = xtype
+        self.electrum = electrum
+        self.bip39_prefixes = (
+            (
+                encode(self.coin.electrum_xprv_headers[xtype], 256, 4),
+                encode(self.coin.electrum_xpub_headers[xtype], 256, 4),
+            )
+            if electrum
+            else (
+                encode(self.coin.xprv_headers[xtype], 256, 4),
+                encode(self.coin.xpub_headers[xtype], 256, 4),
+            )
+        )
+
+    def set_xtype(
+        self,
+        xtype: str,
+        electrum: bool = False,
+    ) -> None:
+        """
+        Sets the type of extended public key (xpub) and derivation method.
+
+        This method sets the type of xpub (e.g., 'p2pkh', 'p2wpkh', 'p2wsh') and
+        whether to use Electrum-style derivation for the keystore.
+
+        Args:
+            xtype: The type of xpub (e.g., 'p2pkh', 'p2wpkh', 'p2wsh').
+            electrum: Whether to use Electrum-style derivation (default: False).
+        """
+        self.xtype = xtype
+        self.electrum = electrum
+        self.bip39_prefixes = (
+            (
+                encode(self.coin.electrum_xprv_headers[xtype], 256, 4),
+                encode(self.coin.electrum_xpub_headers[xtype], 256, 4),
+            )
+            if electrum
+            else (
+                encode(self.coin.xprv_headers[xtype], 256, 4),
+                encode(self.coin.xpub_headers[xtype], 256, 4),
+            )
+        )
+
+    def get_tx_derivations(self, tx):
+        keypairs = {}
+        for txin in tx.inputs():
+            num_sig = txin.get("num_sig")
+            if num_sig is None:
+                continue
+            x_signatures = txin["signatures"]
+            signatures = [sig for sig in x_signatures if sig]
+            if len(signatures) == num_sig:
+                # input is complete
+                continue
+            for k, x_pubkey in enumerate(txin["x_pubkeys"]):
+                if x_signatures[k] is not None:
+                    # this pubkey already signed
+                    continue
+                derivation = self.get_pubkey_derivation(x_pubkey)
+                if not derivation:
+                    continue
+                keypairs[x_pubkey] = derivation
+        return keypairs
+
+    def can_sign(self, tx):
+        if self.is_watching_only():
+            return False
+        return bool(self.get_tx_derivations(tx))
+
+
+class Software_KeyStore(KeyStore):
+
+    def may_have_password(self):
+        return not self.is_watching_only()
+
+    """TODO
+    def sign_message(self, sequence, message, password=None):
+        privkey, compressed = self.get_private_key(sequence, password)
+        return ecdsa_raw_sign(message, privkey)
+
+    def decrypt_message(self, sequence, message, password=None):
+        privkey, compressed = self.get_private_key(sequence, password)
+        return ecdsa_raw_recover(message)
+
+    def sign_transaction(self, tx, password=None):
+        if self.is_watching_only():
+            return
+        # Raise if password is not correct.
+        self.check_password(password)
+        # Add private keys
+        keypairs = self.get_tx_derivations(tx)
+        for k, v in keypairs.items():
+            keypairs[k] = self.get_private_key(v, password)
+        # Sign
+        if keypairs:
+            tx.sign(keypairs)"""
+
+
+class Imported_KeyStore(Software_KeyStore):
+    # keystore for imported private keys
+
+    def __init__(self, d, coin):
+        Software_KeyStore.__init__(self, coin)
+        self.keypairs = d.get("keypairs", {})
+
+    def is_deterministic(self):
+        return False
+
+    def can_change_password(self):
+        return True
+
+    def get_master_public_key(self):
+        return None
+
+    def dump(self):
+        return {
+            "type": "imported",
+            "keypairs": self.keypairs,
+        }
+
+    def can_import(self):
+        return True
+
+    def check_password(self, password=None):
+        pubkey = list(self.keypairs.keys())[0]
+        self.get_private_key(pubkey, password)
+
+    def import_privkey(self, privkey, password=None):
+        if is_xprv(privkey, prefixes=self.bip39_prefixes):
+            privkey = bip32_deserialize(privkey, self.bip39_prefixes)
+        pubkey = self.coin.privtopub(privkey)
+        self.keypairs[pubkey] = pw_encode(privkey, password)
+        return "p2pkh", pubkey
+
+    def delete_imported_key(self, key):
+        self.keypairs.pop(key)
+
+    def get_private_key(self, pubkey, password=None):
+        privkey = pw_decode(self.keypairs[pubkey], password)
+        # this checks the password
+        if pubkey != self.coin.privtopub(privkey):
+            raise InvalidPassword()
+        return privkey, True
+
+    def get_pubkey_derivation(self, x_pubkey):
+        if get_pubkey_format(x_pubkey) in ["bin", "bin_compressed"]:
+            if x_pubkey in self.keypairs.keys():
+                return x_pubkey
+        elif x_pubkey[0:2] == "fd":
+            addr = self.coin.p2sh_scriptaddr(x_pubkey[2:])
+            if addr in self.addresses:
+                return self.addresses[addr].get("pubkey")
+
+    def update_password(self, old_password, new_password):
+        self.check_password(old_password)
+        if new_password == "":
+            new_password = None
+        for k, v in self.keypairs.items():
+            b = pw_decode(v, old_password)
+            c = pw_encode(b, new_password)
+            self.keypairs[k] = c
+
+
+class Deterministic_KeyStore(Software_KeyStore):
+
+    def __init__(
+        self,
+        d: dict[str, str],
+        # coin: BaseCoin,
+        coin,
+    ):
+        Software_KeyStore.__init__(self, coin)
+        self.seed: str = d.get("seed", "")
+        self.passphrase: str = d.get("passphrase", "")
+
+    def is_deterministic(self):
+        return True
+
+    def dump(self):
+        d = {}
+        if self.seed:
+            d["seed"] = self.seed
+        if self.passphrase:
+            d["passphrase"] = self.passphrase
+        return d
+
+    def has_seed(self):
+        return bool(self.seed)
+
+    def is_watching_only(self):
+        return not self.has_seed()
+
+    def can_change_password(self):
+        return not self.is_watching_only()
+
+    def add_seed(self, seed):
+        if self.seed:
+            raise Exception("a seed exists")
+        self.seed = self.format_seed(seed)
+
+    def get_seed(self, password):
+        return pw_decode(self.seed, password)
+
+    def get_passphrase(self, password):
+        return pw_decode(self.passphrase, password) if self.passphrase else ""
+
+
+class Xpub:
+
+    def __init__(self):
+        self.xpub = None
+        self.xpub_receive = None
+        self.xpub_change = None
+
+    def get_master_public_key(self):
+        return self.xpub
+
+    def derive_pubkey(self, for_change, n):
+        xpub = self.xpub_change if for_change else self.xpub_receive
+        if xpub is None:
+            xpub = bip32_ckd(self.xpub, 1 if for_change else 0, self.bip39_prefixes)
+            if for_change:
+                self.xpub_change = xpub
+            else:
+                self.xpub_receive = xpub
+        return self.get_pubkey_from_xpub(xpub, (n,), self.bip39_prefixes)
+
+    @classmethod
+    def get_pubkey_from_xpub(self, xpub, sequence, bip39_prefixes):
+        return bip32_derive_key(xpub, sequence, bip39_prefixes)
+
+    """needed?
+    def get_xpubkey(self, c, i):
+        s = ''.join(map(lambda x: bitcoin.int_to_hex(x,2), (c, i)))
+        return 'ff' + bh2u(b58check_to_hex(self.xpub)) + s
+
+    @classmethod
+    def parse_xpubkey(self, pubkey):
+        assert pubkey[0:2] == 'ff'
+        pk = bfh(pubkey)
+        pk = pk[1:]
+        xkey = bin_to_b58check(pk[0:78])
+        dd = pk[78:]
+        s = []
+        while dd:
+            n = int(bitcoin.rev_hex(bh2u(dd[0:2])), 16)
+            dd = dd[2:]
+            s.append(n)
+        assert len(s) == 2
+        return xkey, s
+
+    def get_pubkey_derivation(self, x_pubkey):
+        if x_pubkey[0:2] != 'ff':
+            return
+        xpub, derivation = self.parse_xpubkey(x_pubkey)
+        if self.xpub != xpub:
+            return
+        return derivation"""
+
+
+class BIP32_KeyStore(Deterministic_KeyStore, Xpub):
+
+    def __init__(
+        self,
+        d: dict[str, str],
+        # coin: BaseCoin,
+        coin,
+    ):
+        Xpub.__init__(self)
+        Deterministic_KeyStore.__init__(self, d, coin)
+        self.xpub = d.get("xpub")
+        self.xprv = d.get("xprv")
+
+    def format_seed(self, seed):
+        return " ".join(seed.split())
+
+    def dump(self):
+        d = Deterministic_KeyStore.dump(self)
+        d["type"] = "bip32"
+        d["xpub"] = self.xpub
+        d["xprv"] = self.xprv
+        return d
+
+    def get_master_private_key(self, password=None):
+        return pw_decode(self.xprv, password)
+
+    def check_password(self, password=None):
+        xprv = pw_decode(self.xprv, password)
+        if (
+            bip32_deserialize(xprv, self.bip39_prefixes)[4]
+            != bip32_deserialize(self.xpub, self.bip39_prefixes)[4]
+        ):
+            raise InvalidPassword()
+
+    def update_password(
+        self,
+        old_password,
+        new_password,
+    ):
+        self.check_password(old_password)
+        if new_password == "":
+            new_password = None
+        if self.has_seed():
+            decoded = self.get_seed(old_password)
+            self.seed = pw_encode(decoded, new_password)
+        if self.passphrase:
+            decoded = self.get_passphrase(old_password)
+            self.passphrase = pw_encode(decoded, new_password)
+        if self.xprv is not None:
+            b = pw_decode(self.xprv, old_password)
+            self.xprv = pw_encode(b, new_password)
+
+    def is_watching_only(self):
+        return self.xprv is None
+
+    def add_xprv(self, xprv):
+        self.xprv = xprv
+        self.xpub = bip32_privtopub(xprv, self.bip39_prefixes)
+
+    def add_xpub_original(self, xpub, xtype, electrum=False):
+        self.set_xtype(xtype, electrum=electrum)
+        self.xpub = xpub
+
+    def add_xpub(self, xpub: str, xtype: str, electrum: bool = False) -> None:
+        """
+        Adds an extended public key (xpub) to the keystore.
+
+        This method allows you to add an xpub to the keystore, which can then be
+        used to derive child keys and addresses.
+
+        Args:
+            xpub: The extended public key (xpub) to add.
+            xtype: The type of xpub (e.g., 'p2pkh', 'p2wpkh', 'p2wsh').
+            electrum: Whether to use Electrum-style derivation (default: False).
+        """
+        self.set_xtype(xtype, electrum=electrum)
+        self.xpub = xpub
+
+    def add_xprv_from_seed(self, bip32_seed, xtype, derivation, electrum=False):
+        self.set_xtype(xtype=xtype, electrum=electrum)
+        self.root_derivation = derivation
+        xprv = bip32_master_key(bip32_seed, self.bip39_prefixes)
+        xprv = bip32_ckd(xprv, derivation, self.bip39_prefixes)
+        self.add_xprv(xprv)
+
+    def get_private_key(self, sequence, password):
+        xprv = self.get_master_private_key(password)
+        pk = bip32_derive_key(xprv, sequence, self.bip39_prefixes)
+        return pk, True
+
+
+class Hardware_KeyStore(KeyStore, Xpub):
+    # Derived classes must set:
+    #   - device
+    #   - DEVICE_IDS
+    #   - wallet_type
+
+    # restore_wallet_class = BIP32_RD_Wallet
+    max_change_outputs = 1
+
+    def __init__(self, d, coin):
+        Xpub.__init__(self)
+        KeyStore.__init__(self, coin)
+        # Errors and other user interaction is done through the wallet's
+        # handler.  The handler is per-window and preserved across
+        # device reconnects
+        self.xpub = d.get("xpub")
+        self.label = d.get("label")
+        self.derivation = d.get("derivation")
+        self.handler = None
+
+    def set_label(self, label):
+        self.label = label
+
+    def may_have_password(self):
+        return False
+
+    def is_deterministic(self):
+        return True
+
+    def dump(self):
+        return {
+            "type": "hardware",
+            "hw_type": self.hw_type,
+            "xpub": self.xpub,
+            "derivation": self.derivation,
+            "label": self.label,
+        }
+
+    def unpaired(self):
+        """A device paired with the wallet was diconnected.  This can be
+        called in any thread context."""
+        print("unpaired")
+
+    def paired(self):
+        """A device paired with the wallet was (re-)connected.  This can be
+        called in any thread context."""
+        print("paired")
+
+    def can_export(self):
+        return False
+
+    def is_watching_only(self):
+        """The wallet is not watching-only; the user will be prompted for
+        pin and passphrase as appropriate when needed."""
+        assert not self.has_seed()
+        return False
+
+    def can_change_password(self):
+        return False
+
+
+def bip39_to_seed_original(mnemonic, passphrase):
+    return mnemonic_to_seed(
+        mnemonic_phrase=mnemonic,
+        passphrase=passphrase,
+    )
+
+
+def bip39_to_seed(
+    mnemonic: Union[str, List[str], Tuple[str]],
+    passphrase: str,
+) -> bytes:
+    """
+    Derives a seed from a BIP39 mnemonic phrase.
+
+    This function uses the `mnemonic_to_seed` function to generate a 64-byte seed
+    from the given mnemonic and passphrase.
+
+    Args:
+        mnemonic (Union[str, List[str], Tuple[str]]): The BIP39 mnemonic phrase,
+            either as a string with words separated by spaces, or as a list or
+            tuple of words.
+        passphrase (str): The passphrase to use for seed derivation.
+
+    Returns:
+        bytes: The derived seed as a 64-byte byte string.
+    """
+    seed_64_bytes: bytes = mnemonic_to_seed(
+        mnemonic_phrase=mnemonic,
+        passphrase=passphrase,
+    )
+    return seed_64_bytes
+
+
+# returns tuple (is_checksum_valid, is_wordlist_valid)
+def bip39_is_checksum_valid(mnemonic: str) -> tuple[bool, bool]:
+    """
+    Validates a BIP39 mnemonic phrase for both checksum and wordlist correctness.
+
+    A BIP39 mnemonic phrase is a sequence of 12, 15, 18, 21, or 24 words from a predefined wordlist.
+    It is used to recover a cryptocurrency wallet. This function checks if the provided mnemonic phrase:
+
+    1. Contains only words from the official BIP39 English wordlist.
+    2. Has a valid checksum, ensuring the phrase was generated correctly.
+
+    Args:
+        mnemonic (str): The BIP39 mnemonic phrase to validate.
+
+    Returns:
+        tuple: A tuple containing two boolean values:
+            - is_checksum_valid: True if the checksum is valid, False otherwise.
+            - is_wordlist_valid: True if all words are in the official BIP39 English wordlist, False otherwise.
+    """
+    words = [normalize("NFKD", word) for word in mnemonic.split()]
+    words_len = len(words)
+    wordlist = wordlist_english
+    n = len(wordlist)
+    checksum_length = 11 * words_len // 33
+    entropy_length = 32 * checksum_length
+    i = 0
+    words.reverse()
+    while words:
+        w = words.pop()
+        try:
+            k = wordlist.index(w)
+        except ValueError:
+            return False, False
+        i = i * n + k
+    if words_len not in [12, 15, 18, 21, 24]:
+        return False, True
+    entropy = i >> checksum_length
+    checksum = i % 2**checksum_length
+    h = "{:x}".format(entropy)
+    while len(h) < entropy_length / 4:
+        h = "0" + h
+    b = bytearray.fromhex(h)
+    hashed = int(hfu(hashlib.sha256(b).digest()), 16)
+    calculated_checksum = hashed >> (256 - checksum_length)
+    return checksum == calculated_checksum, True
+
+
+def from_bip39_seed_riginal(seed, passphrase, derivation, coin):
+    k = BIP32_KeyStore({}, coin)
+    bip32_seed = bip39_to_seed(seed, passphrase)
+    xtype = xtype_from_derivation(derivation)
+    k.add_xprv_from_seed(bip32_seed, xtype, derivation)
+    return k
+
+
+def from_bip39_seed(
+    seed: str,
+    passphrase: str,
+    derivation: str,
+    # coin: BaseCoin,
+    coin,
+) -> BIP32_KeyStore:
+    """
+    Generates a BIP32 keystore from a BIP39 seed phrase.
+
+    This function takes a BIP39 seed phrase, an optional passphrase, a derivation path,
+    and a cryptocurrency type. It generates a BIP32 keystore object using the provided inputs.
+
+    Args:
+        seed (str): The BIP39 seed phrase.
+        passphrase (str): The optional passphrase used to enhance security.
+        derivation (str): The derivation path for the keystore (e.g., "m/44'/0'/0'").
+        coin (BaseCoin): The type of cryptocurrency for which to generate the keystore (e.g., 'BTC', 'ETH').
+
+    Returns:
+        BIP32_KeyStore: A BIP32 keystore object containing the derived keys.
+    """
+    bip_32_keystore: BIP32_KeyStore = BIP32_KeyStore(d={}, coin=coin)
+    bip32_seed: bytes = bip39_to_seed(seed, passphrase)
+    xtype: str = xtype_from_derivation(derivation=derivation)
+    bip_32_keystore.add_xprv_from_seed(bip32_seed, xtype, derivation)
+    return bip_32_keystore
+
+
+def standard_from_bip39_seed_original(seed, passphrase, coin):
+    derivation = "m/44'/%s'/0'" % coin.hd_path
+    return from_bip39_seed(seed, passphrase, derivation, coin)
+
+
+def standard_from_bip39_seed(
+    seed: str,
+    passphrase: str,
+    # coin: BaseCoin,
+    coin,
+) -> BIP32_KeyStore:
+    """
+    Derives a BIP32 keystore from a BIP39 seed using the standard derivation path.
+
+    Args:
+        seed (str): The BIP39 seed phrase.
+        passphrase (str): The passphrase used to derive the keystore.
+        coin (BaseCoin): The coin for which the keystore is being derived.
+
+    Returns:
+        BIP32_KeyStore: The derived BIP32 keystore.
+    """
+    derivation: str = "m/44'/%s'/0'" % coin.hd_path
+    keystore: BIP32_KeyStore = from_bip39_seed(
+        seed=seed,
+        passphrase=passphrase,
+        derivation=derivation,
+        coin=coin,
+    )
+    return keystore
+
+
+def p2wpkh_from_bip39_seed(seed, passphrase, coin):
+    derivation = "m/84'/%s'/0'" % coin.hd_path
+    return from_bip39_seed(seed, passphrase, derivation, coin)
+
+
+def p2wpkh_p2sh_from_bip39_seed(seed, passphrase, coin):
+    derivation = "m/49'/%s'/0'" % coin.hd_path
+    return from_bip39_seed(seed, passphrase, derivation, coin)
+
+
+def xtype_from_derivation_original(derivation):
+    """Returns the script type to be used for this derivation."""
+    if derivation.startswith("m/84'"):
+        return "p2wpkh"
+    elif derivation.startswith("m/49'"):
+        return "p2wpkh-p2sh"
+    else:
+        return "p2pkh"
+
+
+def xtype_from_derivation(derivation: str) -> str:
+    """
+    Determines the script type based on the derivation path.
+
+    This function analyzes the provided derivation path to infer the appropriate script type (e.g., "p2wpkh", "p2wpkh-p2sh", or "p2pkh") for the derived keys.
+
+    Args:
+        derivation (str): The derivation path used to generate the keys.
+
+    Returns:
+        str: The script type corresponding to the provided derivation path.
+    """
+    if derivation.startswith("m/84'"):
+        return "p2wpkh"
+    elif derivation.startswith("m/49'"):
+        return "p2wpkh-p2sh"
+    else:
+        return "p2pkh"
+
+
+# extended pubkeys
+
+
+def is_xpubkey(x_pubkey):
+    return x_pubkey[0:2] == "ff"
+
+
+def parse_xpubkey(x_pubkey):
+    assert x_pubkey[0:2] == "ff"
+    return BIP32_KeyStore.parse_xpubkey(x_pubkey)
+
+
+def xpubkey_to_address(x_pubkey, coin):
+    if x_pubkey[0:2] == "fd":
+        address = coin.p2sh_scriptaddr(x_pubkey[2:])
+        return x_pubkey, address
+    if x_pubkey[0:2] in ["02", "03", "04"]:
+        pubkey = x_pubkey
+    elif x_pubkey[0:2] == "ff":
+        xpub, s = BIP32_KeyStore.parse_xpubkey(x_pubkey)
+        pubkey = BIP32_KeyStore.get_pubkey_from_xpub(xpub, s)
+    else:
+        raise BaseException("Cannot parse pubkey")
+    address = coin.pubtoaddr(pubkey)
+    return pubkey, address
+
+
+def xpubkey_to_pubkey(x_pubkey, coin):
+    pubkey, address = xpubkey_to_address(x_pubkey, coin)
+    return pubkey
+
+
+hw_keystores = {}
+
+
+def register_keystore(hw_type, constructor):
+    hw_keystores[hw_type] = constructor
+
+
+def hardware_keystore(d):
+    hw_type = d["hw_type"]
+    if hw_type in hw_keystores:
+        constructor = hw_keystores[hw_type]
+        return constructor(d)
+    raise BaseException("unknown hardware type", hw_type)
+
+
+def is_address_list(text, coin):
+    parts = text.split()
+    return bool(parts) and all(coin.is_address(x) for x in parts)
+
+
+def get_private_keys(privkeys):
+    if not isinstance(privkeys, (list, tuple)):
+        privkeys = privkeys.split("\n")
+        privkeys = map(lambda x: "".join(x.split()), privkeys)
+        privkeys = list(filter(bool, privkeys))
+    return privkeys
+
+
+def is_private_key_list(text):
+    return bool(get_private_keys(text))
+
+
+is_mpk = lambda x: is_xpub(x)
+is_private = lambda x: is_seed(x) or is_xprv(x) or is_private_key_list(x)
+is_master_key = lambda x: is_xprv(x) or is_xpub(x)
+is_private_key = lambda x: is_xprv(x) or is_private_key_list(x)
+is_bip32_key = lambda x: is_xprv(x) or is_xpub(x)
+
+
+def from_electrum_seed_original(seed, passphrase, is_p2sh, coin):
+    t = seed_type(seed)
+    if t in ["standard", "segwit"]:
+        keystore = BIP32_KeyStore({}, coin)
+        keystore.add_seed(seed)
+        keystore.passphrase = passphrase
+        bip32_seed = electrum_mnemonic_to_seed(seed, passphrase)
+        if t == "standard":
+            der = "m/"
+            xtype = "p2pkh"
+        else:
+            der = "m/1'/" if is_p2sh else "m/0'/"
+            xtype = "p2wsh" if is_p2sh else "p2wpkh"
+        keystore.add_xprv_from_seed(bip32_seed, xtype, der, electrum=True)
+    else:
+        raise BaseException(t)
+    return keystore
+
+
+# from typing import Tuple, Dict, Any, Union
+
+
+def from_electrum_seed(
+    seed: str,
+    passphrase: str,
+    is_p2sh: bool,
+    coin: str,
+) -> BIP32_KeyStore:
+    """
+    Generates a BIP32 keystore from an Electrum seed.
+
+    This function takes an Electrum mnemonic seed, a passphrase, a flag indicating
+    whether to use P2SH or native SegWit, and the coin type (e.g., 'btc' for Bitcoin)
+    and returns a BIP32 keystore object.
+
+    Args:
+        seed (str): The Electrum mnemonic seed.
+        passphrase (str): The passphrase associated with the seed.
+        is_p2sh (bool): True if using P2SH, False for native SegWit.
+        coin (str): The coin type (e.g., 'btc').
+
+    Returns:
+        BIP32_KeyStore: A BIP32 keystore object containing the derived keys.
+
+    Raises:
+        BaseException: If the seed type is not recognized.
+
+    Example:
+        >>> from_electrum_seed(
+        ...     "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+        ...     "password",
+        ...     False,
+        ...     "btc"
+        ... )
+        <BIP32_KeyStore object>
+    """
+    t: str = seed_type(
+        seed
+    )  # Determine the type of the seed (e.g., "standard", "segwit")
+    if t in ["standard", "segwit"]:
+        keystore: BIP32_KeyStore = BIP32_KeyStore(
+            {}, coin
+        )  # Initialize a BIP32 keystore for the specified coin
+        keystore.add_seed(seed)  # Add the seed to the keystore
+        keystore.passphrase = passphrase  # Set the passphrase for the keystore
+        bip32_seed: bytes = electrum_mnemonic_to_seed(
+            seed, passphrase
+        )  # Convert the Electrum mnemonic seed to a BIP32 seed using the passphrase
+        if t == "standard":
+            der: str = "m/"  # Derivation path for standard seeds
+            xtype: str = (
+                "p2pkh"  # Address type for standard seeds (Pay-to-Public-Key-Hash)
+            )
+        else:
+            der: str = (
+                "m/1'/" if is_p2sh else "m/0'/"
+            )  # Derivation path for SegWit seeds (P2SH or native SegWit)
+            xtype: str = (
+                "p2wsh" if is_p2sh else "p2wpkh"
+            )  # Address type for SegWit seeds (P2SH or native SegWit)
+        keystore.add_xprv_from_seed(
+            bip32_seed, xtype, der, electrum=True
+        )  # Add the extended private key (xprv) to the keystore from the BIP32 seed
+    else:
+        raise BaseException(t)  # Raise an exception if the seed type is not recognized
+    return keystore  # Return the BIP32 keystore object
+
+
+def from_private_key_list(privkeys, coin, xtype="p2pkh", password=None):
+    keystore = Imported_KeyStore({}, coin)
+    keystore.set_xtype(xtype)
+    for priv in get_private_keys(privkeys):
+        keystore.import_privkey(priv, password=password)
+    return keystore
+
+
+def from_xpub_original(xpub, coin, xtype, electrum=False):
+    k = BIP32_KeyStore({}, coin)
+    k.add_xpub(xpub, xtype, electrum=electrum)
+    return k
+
+
+def from_xpub(
+    xpub: str,
+    coin: str,
+    xtype: str,
+    electrum: bool = False,
+) -> BIP32_KeyStore:
+    """
+    Creates a BIP32_KeyStore object from an extended public key (xpub).
+
+    This function allows you to create a keystore object from an xpub, which
+    can then be used to derive child keys and addresses.
+
+    Args:
+        xpub: The extended public key (xpub) to import.
+        coin: The cryptocurrency network for which the xpub is valid (e.g., 'btc', 'eth').
+        xtype: The type of xpub (e.g., 'p2pkh', 'p2wpkh', 'p2wsh').
+        electrum: Whether to use Electrum-style derivation (default: False).
+
+    Returns:
+        BIP32_KeyStore: The keystore object containing the imported xpub.
+    """
+    k: BIP32_KeyStore = BIP32_KeyStore({}, coin)
+    k.add_xpub(xpub, xtype, electrum=electrum)
+    return k
+
+
+def from_xprv(xprv, coin):
+    xpub = bip32_privtopub(xprv, coin.bip39_prefixes)
+    k = BIP32_KeyStore({}, coin)
+    k.xprv = xprv
+    k.xpub = xpub
+    return k
+
+
+def from_master_key(text, coin):
+    prefixes = coin.bip39_prefixes
+    if is_xprv(text, prefixes):
+        k = from_xprv(text, coin)
+    elif is_xpub(text, prefixes):
+        k = from_xpub(text, coin)
+    else:
+        raise BaseException("Invalid key")
+    return k

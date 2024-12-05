@@ -1,0 +1,11 @@
+------------------------------------------------------------
+Created doge address  Network: Mainnet(the real doge blockchain)
+------------------------------------------------------------
+doge:Private Key:        71f5c1d476bd86b417de6ddd44bd15045656292ffffaf3ed0da46f892355224e
+doge:Public_address:     DUQWE6mxqumqiMbrNfXLqFtSfNsQA1NevH
+------------------------------------------------------------
+test it: https://live.blockcypher.com/btc/address/1EfayE6j4nv6L13Q2BdDtys7Gs2b791ev4/
+------------------------------------------------------------
+------------------------------------------------------------
+test it(testnet): https://blockexplorer.one/dogecoin/testnet/address/ns3c8yGKiTL1TGgQru9CFbSwGxgLt3EHph
+------------------------------------------------------------

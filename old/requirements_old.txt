@@ -1,0 +1,7 @@
+requests
+pbkdf2
+pycryptodomex
+aiorpcx
+certifi
+janus
+packaging

@@ -1,0 +1,37 @@
+{
+    "electrumx-mainnet.dash.org": {
+        "pruning": "-",
+        "s": "50002",
+        "version": "1.4"
+    },
+    "drk.p2pay.com": {
+        "pruning": "-",
+        "s": "50002",
+        "version": "1.4"
+     },
+    "electrum1.cipig.net": {
+        "pruning": "-",
+        "t": "10061",
+        "version": "1.4"
+    },
+    "electrum2.cipig.net": {
+        "pruning": "-",
+        "t": "10061",
+        "version": "1.4"
+    },
+    "electrum3.cipig.net": {
+        "pruning": "-",
+        "t": "10061",
+        "version": "1.4"
+    },
+    "hbhux3mfytxeywes5qesx7nzoesukihwseqkw7qa7oprc5nqqxj3jiid.onion": {
+        "pruning": "-",
+        "s": "50002",
+        "version": "1.4"
+    },
+    "22mgr2fndslabzvx4sj7ialugn2jv3cfqjb3dnj67a6vnrkp7g4l37ad.onion": {
+        "pruning": "-",
+        "t": "50001",
+        "version": "1.4.2"
+    }
+}
