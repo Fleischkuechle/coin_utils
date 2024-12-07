@@ -37,11 +37,11 @@ if __name__ == "__main__":
 
     # pub_address: str = "D8koxBk542fETcJUqgd48aqFbZww9Rhmbt"
     # pub_address: str = "DBgHW1Shjyk91fusm9hm3HcryNBwaFwZbQ"
-    # pub_address: str = "DEi98svyRa5HrgVRXqi3irmTi5VVmAbJus"
+    pub_address: str = "DEi98svyRa5HrgVRXqi3irmTi5VVmAbJus"  ########
     # pub_address: str = "DUQWE6mxqumqiMbrNfXLqFtSfNsQA1NevH" #empty test address
     # pub_address: str = "DJun5jqd9WUzXtDsHUM64Wica8omr7XXGw"
     # pub_address: str = "DNDNJRfqYu3htReGKgUoVnUYfZJXwM5MBf"
 
-    pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"  # test address 300 doge
+    # pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"  # test address 300 doge
     # pub_address: str = "nZBUZ985136wmU5s7U7Y9o2js5j7Qx9DpC"  # testnet address(print account balance not working)
     print_UTXOS_account_balance_doge.print_account_balance(pub_address=pub_address)

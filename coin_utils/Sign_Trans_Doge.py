@@ -1,4 +1,3 @@
-from cv2 import add
 from cryptos import main
 from cryptos import coins
 

@@ -59,11 +59,14 @@ class Crypto_Send_Helper:
 
         expected_addr: str = ""
         if base_coin.is_native_segwit(addr):
-            expected_addr = base_coin.privtosegwitaddress(privkey)
+            expected_addr = base_coin.privtosegwitaddress(privkey=privkey)
         elif base_coin.is_p2sh(addr):
-            expected_addr = base_coin.privtop2wpkh_p2sh(privkey)
+            expected_addr = base_coin.privtop2wpkh_p2sh(priv=privkey)
         elif base_coin.is_p2pkh(addr):
-            expected_addr = base_coin.privtoaddr(privkey)
+            try:
+                expected_addr = base_coin.privtoaddr(privkey=privkey)
+            except:
+                return expected_addr
         elif len(addr) == 66:
             expected_addr = compress(privtopub(privkey))
         else:
@@ -151,17 +154,33 @@ class Crypto_Send_Helper:
             base_coin=base_coin,
         )
         print(" ")
-        print(self.line_symbol * self.line_length)
-        print(f"get_expected_address = {expected_addr}")
-        print(f"addr                 = {addr}")
-        print(self.line_symbol * self.line_length)
+        if expected_addr != "":
+            print(self.line_symbol * self.line_length)
+
+            print(f"get_expected_address = {expected_addr}")
+            print(f"addr                 = {addr}")
+            print(self.line_symbol * self.line_length)
         if expected_addr != addr:
-            print(self.line_symbol * self.line_length)
-            print(f"Private key is for ths address: {expected_addr},")
-            print(f"not for the given addr:         {addr}")
-            print(f"process stopped...")
-            print(self.line_symbol * self.line_length)
-            return
+            if expected_addr == "":
+                print(self.line_symbol * self.line_length)
+
+                print("Private Key error:")
+                print(f"This private key is not proccessable: {privkey}")
+                print(f"process stopped...")
+                print(self.line_symbol * self.line_length)
+
+                return
+            else:
+
+                print(self.line_symbol * self.line_length)
+                print(
+                    f"Address to private Key missmatch (expected_addr: str = self.get_expected_address)"
+                )
+                print(f"Private key is for ths address: {expected_addr},")
+                print(f"not for the given addr:         {addr}")
+                print(f"process stopped...")
+                print(self.line_symbol * self.line_length)
+                return
         try:
             unsinged_tx = await base_coin.preparetx(
                 addr, to, amount, fee=fee, change_addr=change_addr
@@ -301,6 +320,10 @@ def test_correct_priv_key_doge(
     frm_pub_address_privkey: str = (
         "super secret private key"  # the uncorrect private key for # test address 300 doge 1
     )
+    frm_pub_address_privkey: str = (
+        "e9c12fec5482c3faadc138850fc0cb4f46293493392cf43e3fff829a2855e388"  # the uncorrect private key for # test address 300 doge 1
+    )
+
     to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
     atomic_value_to_spent: float = 3000000000  # in atomic value (satoshis)
     testnet: bool = False
@@ -308,7 +331,9 @@ def test_correct_priv_key_doge(
     change_addr: Optional[str] = None
 
     print(" ")
-    print(f"you about to spent: {atomic_value_to_spent/100000000} coins.")
+    print(
+        f"you about to spent: {atomic_value_to_spent/100000000} coins. (atomic_value_to_spent/100000000)"
+    )
 
     crypto_send_helper: Crypto_Send_Helper = Crypto_Send_Helper(
         coin_symbol=coin_symbol,
