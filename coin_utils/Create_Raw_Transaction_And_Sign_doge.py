@@ -1,11 +1,7 @@
-import inspect
 from cryptos import coins
-from cryptos import script_utils
-
 from typing import Any, Union
 
-from cryptos.types import TXInspectType, Tx, TxInput
-from cryptos import transaction
+from cryptos.types import Tx
 from Create_Raw_Transaction_And_Sign_Helper import (
     Create_Raw_Transaction_And_Sign_Helper,
 )

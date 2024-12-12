@@ -1,17 +1,15 @@
-import argparse
-from os import error
 import aiorpcx
 import asyncio
 import sys
-from getpass import getpass
-from cryptos.main import privtopub, compress
-from cryptos.transaction import serialize
 from typing import Callable, Any, Optional, Union
-from cryptos.script_utils import get_coin, coin_list
-from cryptos.coins_async.base import BaseCoin
 
+from cryptos import transaction
+from cryptos import script_utils
+from cryptos import coins_async
 from cryptos import coins
 from cryptos.types import Tx
+
+from Get_Expected_Address_Helper import Get_Expected_Address_Helper
 
 
 async def run_in_executor(func: Callable, *args) -> Any:
@@ -49,29 +47,12 @@ class Crypto_Send_Helper:
         self.atomic_value_divider: int = (
             100000000  # 1 btc =100,000,000 Satoshis (atomic units)
         )
-
-    def get_expected_address(
-        self,
-        addr: str,
-        privkey: str,
-        base_coin: BaseCoin,
-    ):
-
-        expected_addr: str = ""
-        if base_coin.is_native_segwit(addr):
-            expected_addr = base_coin.privtosegwitaddress(privkey=privkey)
-        elif base_coin.is_p2sh(addr):
-            expected_addr = base_coin.privtop2wpkh_p2sh(priv=privkey)
-        elif base_coin.is_p2pkh(addr):
-            try:
-                expected_addr = base_coin.privtoaddr(privkey=privkey)
-            except:
-                return expected_addr
-        elif len(addr) == 66:
-            expected_addr = compress(privtopub(privkey))
-        else:
-            expected_addr = privtopub(privkey)
-        return expected_addr
+        self.get_expected_address_helper: Get_Expected_Address_Helper = (
+            Get_Expected_Address_Helper(
+                coin_symbol=self.coin_symbol,
+                testnet=self.testnet,
+            )
+        )
 
     def format_to_8_decimals(self, value: float) -> str:
         """Formats a  value to 8 decimal places."""
@@ -146,95 +127,74 @@ class Crypto_Send_Helper:
         privkey: Optional[str] = None,
         broadcast: bool = False,
     ):
-        base_coin: BaseCoin = get_coin(coin, testnet=testnet)
-
-        expected_addr: str = self.get_expected_address(
+        base_coin: coins_async.BaseCoin = script_utils.get_coin(coin, testnet=testnet)
+        address_match: bool = False
+        address_match = self.get_expected_address_helper.address_check(
+            coin=coin,
+            testnet=testnet,
             addr=addr,
             privkey=privkey,
-            base_coin=base_coin,
         )
-        print(" ")
-        if expected_addr != "":
-            print(self.line_symbol * self.line_length)
 
-            print(f"get_expected_address = {expected_addr}")
-            print(f"addr                 = {addr}")
-            print(self.line_symbol * self.line_length)
-        if expected_addr != addr:
-            if expected_addr == "":
-                print(self.line_symbol * self.line_length)
-
-                print("Private Key error:")
-                print(f"This private key is not proccessable: {privkey}")
-                print(f"process stopped...")
-                print(self.line_symbol * self.line_length)
-
-                return
-            else:
-
-                print(self.line_symbol * self.line_length)
-                print(
-                    f"Address to private Key missmatch (expected_addr: str = self.get_expected_address)"
-                )
-                print(f"Private key is for ths address: {expected_addr},")
-                print(f"not for the given addr:         {addr}")
-                print(f"process stopped...")
-                print(self.line_symbol * self.line_length)
-                return
-        try:
-            unsinged_tx = await base_coin.preparetx(
-                addr, to, amount, fee=fee, change_addr=change_addr
-            )
-        except Exception as e:  # Catch any other exception
-            print(self.line_symbol * self.line_length)
-            print(f" exception occurred: {e}")
-            print(f"process stopped...")
-            print(self.line_symbol * self.line_length)
-            return
-        print(self.line_symbol * self.line_length)
-        print(
-            f"raw transaction serialized:(https://live.blockcypher.com/btc/decodetx/)"
-        )
-        print(serialize(unsinged_tx))
-        print(self.line_symbol * self.line_length)
-        print(self.line_symbol * self.line_length)
-        print(f"raw transaction (unsigned tx):")
-        self.print_pretty_4(data=unsinged_tx)
-        print(self.line_symbol * self.line_length)
-        # print(tx)
-        singed_tx: Tx = base_coin.signall(
-            txobj=unsinged_tx,
-            priv=privkey,
-        )
-        print(self.line_symbol * self.line_length)
-        print(
-            f"signed transaction serialized:(https://live.blockcypher.com/btc/decodetx/)"
-        )
-        print(serialize(singed_tx))
-        print(self.line_symbol * self.line_length)
-        print(f"signed transaction (signed tx):")
-        print(self.line_symbol * self.line_length)
-        self.print_pretty_4(data=singed_tx)
-        counter: int = 0
-        for out in singed_tx["outs"]:
-            script = out["script"]
-            out_address: str = base_coin.output_script_to_address(script=script)
-            print(f"out_address {counter}= {out_address}")
-            counter = counter + 1
-        # print(tx)
-        print(self.line_symbol * self.line_length)
-        if broadcast:
+        if address_match:
             try:
-                result = await base_coin.pushtx(singed_tx)
-                print(f"Transaction broadcasted successfully {result}")
-            except (aiorpcx.jsonrpc.RPCError, aiorpcx.jsonrpc.ProtocolError) as e:
-                sys.stderr.write(e.message.upper())
-        else:
-            print("Transaction was cancelled because broadcast=False")
+                unsinged_tx: Tx = await base_coin.preparetx(
+                    frm=addr,
+                    to=to,
+                    value=amount,
+                    fee=fee,
+                    change_addr=change_addr,
+                )
+            except Exception as e:  # Catch any other exception
+                print(self.line_symbol * self.line_length)
+                print(f" exception occurred: {e}")
+                print(f"process stopped...")
+                print(self.line_symbol * self.line_length)
+                return
+            print(self.line_symbol * self.line_length)
             print(
-                f"at the following link you can if you want broadcast your transaction."
+                f"raw transaction serialized:(https://live.blockcypher.com/btc/decodetx/)"
             )
-            print("https://live.blockcypher.com/doge/pushtx/")
+            print(transaction.serialize(txobj=unsinged_tx))
+            print(self.line_symbol * self.line_length)
+            print(self.line_symbol * self.line_length)
+            print(f"raw transaction (unsigned tx):")
+            self.print_pretty_4(data=unsinged_tx)
+            print(self.line_symbol * self.line_length)
+            # print(tx)
+            singed_tx: Tx = base_coin.signall(
+                txobj=unsinged_tx,
+                priv=privkey,
+            )
+            print(self.line_symbol * self.line_length)
+            print(
+                f"signed transaction serialized:(https://live.blockcypher.com/btc/decodetx/)"
+            )
+            print(transaction.serialize(singed_tx))
+            print(self.line_symbol * self.line_length)
+            print(f"signed transaction (signed tx):")
+            print(self.line_symbol * self.line_length)
+            self.print_pretty_4(data=singed_tx)
+            counter: int = 0
+            for out in singed_tx["outs"]:
+                script = out["script"]
+                out_address: str = base_coin.output_script_to_address(script=script)
+                print(f"out_address {counter}= {out_address}")
+                counter = counter + 1
+            # print(tx)
+            print(self.line_symbol * self.line_length)
+            if broadcast:
+                try:
+                    result = await base_coin.pushtx(singed_tx)
+                    print(f"Transaction broadcasted successfully {result}")
+                except (aiorpcx.jsonrpc.RPCError, aiorpcx.jsonrpc.ProtocolError) as e:
+                    sys.stderr.write(e.message.upper())
+            else:
+                print("Transaction was cancelled because broadcast=False")
+                print(
+                    f"at the following link you can if you want broadcast your transaction."
+                )
+                print("https://live.blockcypher.com/doge/pushtx/")
 
 
 def test_wrong_priv_key_btc(
