@@ -13,7 +13,7 @@ Blockchain stuff actually work.
 here are some workflows you can realize with that scripts:
 
 1. savely create a transaction and singn it offline for dogecoin or bitcoin (works kind of the same)
-- run  Create_Address_Doge.py
+- run  Create_Address_Doge.py (run this only on a offline computer or use other tools for creation)
 
     Result is this:(print in terminal)
 
