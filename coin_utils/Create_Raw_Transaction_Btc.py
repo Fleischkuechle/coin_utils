@@ -17,7 +17,7 @@ class Create_Raw_Transaction_Btc:
             )
         )
 
-    def create_raw_transaction_btc(
+    def create_raw_transaction(
         self,
         frm_pub_address: str = "",
         to_pub_address: str = "",
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # value_to_spent: float = 0.00001
     atomic_value_to_spent: float = 300  # in atomic (satoshis)
     # fee: float = 100
-    tx: Tx = create_raw_transaction.create_raw_transaction_btc(
+    tx: Tx = create_raw_transaction.create_raw_transaction(
         frm_pub_address=frm_pub_address,
         to_pub_address=to_pub_address,
         print_result=print_result,

@@ -187,7 +187,27 @@ def encode_8_bytes(val: int) -> bytes:
     return py3specials.encode(val, 256, 8)[::-1]
 
 
+def list_to_bytes_original(vals: list[bytes]) -> bytes:
+    try:
+        return reduce(lambda x, y: x + y, vals, bytes())
+    except Exception as e:
+        print(e)
+        pass
+
+
 def list_to_bytes(vals: list[bytes]) -> bytes:
+    """
+    Concatenates a list of byte arrays into a single byte array.
+
+    Args:
+        vals: A list of byte arrays.
+
+    Returns:
+        A single byte array containing the concatenated bytes from the input list.
+
+    Raises:
+        Exception: If an error occurs during concatenation.
+    """
     try:
         return reduce(lambda x, y: x + y, vals, bytes())
     except Exception as e:
@@ -476,7 +496,75 @@ def serialize_original(txobj: Tx, include_witness: bool = True) -> AnyStr:
     return list_to_bytes(o)
 
 
-def serialize(txobj: Tx, include_witness: bool = True) -> AnyStr:
+# def serialize(txobj: Tx, include_witness: bool = True) -> AnyStr:
+#     txobj = deepcopy(txobj)
+#     for i in txobj["ins"]:
+#         if "address" in i:
+#             del i["address"]
+#     from . import py3specials
+
+#     if isinstance(txobj, bytes):
+#         txobj = py3specials.bytes_to_hex_string(b=txobj)
+#     o = []
+#     if json_is_base(txobj, 16):
+#         json_changedbase = json_changebase(txobj, test_unhexlify)
+#         hexlified = py3specials.safe_hexlify(
+#             serialize(json_changedbase, include_witness=include_witness)
+#         )
+#         return hexlified
+#     o.append(encode_4_bytes(txobj["version"]))
+#     if include_witness and all(k in txobj.keys() for k in ["marker", "flag"]):
+#         o.append(encode_1_byte(txobj["marker"]))
+#         o.append(encode_1_byte(txobj["flag"]))
+#     from . import main
+
+#     o.append(main.num_to_var_int(len(txobj["ins"])))
+#     for inp in txobj["ins"]:
+#         o.append(inp["tx_hash"][::-1])
+#         o.append(encode_4_bytes(inp["tx_pos"]))
+#         o.append(
+#             main.num_to_var_int(len(inp["script"]))
+#             + (inp["script"] if inp["script"] else bytes())
+#         )
+#         o.append(encode_4_bytes(inp["sequence"]))
+#     o.append(main.num_to_var_int(len(txobj["outs"])))
+#     for out in txobj["outs"]:
+#         o.append(encode_8_bytes(out["value"]))
+#         o.append(main.num_to_var_int(len(out["script"])) + out["script"])
+#     if include_witness and "witness" in txobj.keys():
+#         for witness in txobj["witness"]:
+#             o.append(
+#                 main.num_to_var_int(witness["number"])
+#                 + (witness["scriptCode"] if witness["scriptCode"] else bytes())
+#             )
+#     o.append(encode_4_bytes(txobj["locktime"]))
+#     single_byte_array: bytes = list_to_bytes(vals=o)
+
+#     return single_byte_array
+
+
+def serialize(
+    txobj: Tx,
+    include_witness: bool = True,
+) -> bytes:
+    """
+    Serializes a transaction object into a byte array.
+
+    Args:
+        txobj: The transaction object to serialize.
+        include_witness: Whether to include witness data in the serialization. Defaults to True.
+
+    Returns:
+        A byte array(bytes) representing the serialized transaction.
+
+    Raises:
+        None.
+
+    Notes:
+        This function assumes the transaction object is in a specific format.
+        It uses various helper functions (e.g., `encode_4_bytes`, `num_to_var_int`, `list_to_bytes`)
+        which are not defined here but are assumed to exist in the context of the code.
+    """
     txobj = deepcopy(txobj)
     for i in txobj["ins"]:
         if "address" in i:
@@ -485,7 +573,7 @@ def serialize(txobj: Tx, include_witness: bool = True) -> AnyStr:
 
     if isinstance(txobj, bytes):
         txobj = py3specials.bytes_to_hex_string(b=txobj)
-    o = []
+    o: list[bytes] = []
     if json_is_base(txobj, 16):
         json_changedbase = json_changebase(txobj, test_unhexlify)
         hexlified = py3specials.safe_hexlify(
@@ -518,7 +606,9 @@ def serialize(txobj: Tx, include_witness: bool = True) -> AnyStr:
                 + (witness["scriptCode"] if witness["scriptCode"] else bytes())
             )
     o.append(encode_4_bytes(txobj["locktime"]))
-    return list_to_bytes(o)
+    single_byte_array: bytes = list_to_bytes(vals=o)
+
+    return single_byte_array
 
 
 def uahf_digest_original(txobj: Tx, i: int) -> bytes:
