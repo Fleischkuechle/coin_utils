@@ -1211,8 +1211,34 @@ def bin_hash160(string: bytes) -> bytes:
     return RIPEMD_160_hash
 
 
-def hash160(string):
-    return safe_hexlify(bin_hash160(string))
+def hash160_original(string):
+    return safe_hexlify(bin_hash160(string=string))
+
+
+def hash160(string: bytes) -> str:
+    """
+    Calculates the RIPEMD-160 hash of a given string.
+
+    RIPEMD-160 (RACE Integrity Primitives Evaluation Message Digest):
+        is a cryptographic hash function that produces a 160-bit (20-byte) hash value.
+        It is part of the RIPEMD family of hash functions, which were developed in the early
+        1990s. It was introduced in 1996 as an improvement over its predecessor,
+        RIPEMD, which had a shorter output size. RIPEMD-160 is designed to provide a
+        high level of security against various types of attacks, including collision attacks,
+        where two different inputs produce the same hash output. It is widely used in various
+        applications, including digital signatures and blockchain technologies, such as Bitcoin,
+        where it is used to create addresses. The output of RIPEMD-160 is a 160-bit hash,
+        which is typically represented as a 40-character hexadecimal string.
+
+    Args:
+        string (bytes): The input string to hash.
+
+    Returns:
+        str: The hexadecimal representation of the RIPEMD-160 hash.
+    """
+    RIPEMD_160_hash_bytes: bytes = bin_hash160(string=string)
+    RIPEMD_160_hash_hex_str: str = safe_hexlify(RIPEMD_160_hash_bytes)
+    return RIPEMD_160_hash_hex_str
 
 
 def hex_to_hash160(s_hex):
@@ -1640,8 +1666,34 @@ def get_version_byte(inp: str) -> int:
     return version_byte
 
 
-def hex_to_b58check(inp, magicbyte=0):
+def hex_to_b58check_original(inp, magicbyte=0):
     return bin_to_b58check(binascii.unhexlify(inp), magicbyte)
+
+
+# def hex_to_b58check(inp, magicbyte=0):
+#     base58_encoded_with_leading_zeros: str = bin_to_b58check(
+#         inp=binascii.unhexlify(inp),
+#         magicbyte=magicbyte,
+#     )
+#     return base58_encoded_with_leading_zeros
+def hex_to_b58check(inp: str, magicbyte: int = 0) -> str:
+    """
+    Converts a hexadecimal string to a Base58Check encoded string.
+
+    This function takes a hexadecimal string as input and converts it to a Base58Check encoded string. Base58Check is a variant of Base58 encoding that adds a checksum to the encoded data, providing additional security. The magicbyte parameter allows specifying a prefix byte for the encoding.
+
+    Args:
+        inp (str): The hexadecimal string to encode.
+        magicbyte (int, optional): The prefix byte for the encoding. Defaults to 0.
+
+    Returns:
+        str: The Base58Check encoded string.
+    """
+    base58_encoded_with_leading_zeros: str = bin_to_b58check(
+        inp=binascii.unhexlify(inp),
+        magicbyte=magicbyte,
+    )
+    return base58_encoded_with_leading_zeros
 
 
 def b58check_to_hex_original(inp) -> Tuple[int, str]:

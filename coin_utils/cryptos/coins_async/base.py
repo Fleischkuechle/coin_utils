@@ -1363,13 +1363,45 @@ class BaseCoin:
             # scriptbyte = vbyte
             return bin_to_b58check(script[2:-1], self.script_magicbyte)
 
-    def p2sh_scriptaddr(self, script: str) -> str:
+    def p2sh_scriptaddr_original(self, script: str) -> str:
         """
         Convert an output p2sh script to an address
         """
         if is_hex(script):
             script = binascii.unhexlify(script)
         return hex_to_b58check(hash160(script), self.script_magicbyte)
+
+    def p2sh_scriptaddr(self, script: str) -> str:
+        """
+        Converts a Pay-to-Script-Hash (P2SH) output script to a cryptocurrency address.
+
+        This function takes a P2SH output script as input and converts it to a cryptocurrency address, supporting Bitcoin, Dogecoin, and Litecoin. P2SH is a mechanism that allows for the use of more complex scripts within cryptocurrency transactions. Instead of directly including the script in the transaction, a hash of the script is used, which is then encoded into a cryptocurrency address. This address can then be used to redeem the funds associated with the script.
+
+        Args:
+            script (str): The P2SH output script, either as a hexadecimal string or raw bytes.
+
+        Returns:
+            str: The cryptocurrency address corresponding to the P2SH script.
+
+        Examples:
+            >>> p2sh_scriptaddr(script='a914d85c2b7151a08794e345dd9a7c5fc94f01f9a58887')  # Bitcoin
+            '3M9w6R962u4sGeyhWDSV9hG37U4S2x3z8'
+            >>> p2sh_scriptaddr(script='a914d85c2b7151a08794e345dd9a7c5fc94f01f9a58887', magicbyte=0x30)  # Litecoin
+            'LTuQ2XzY5y8b8Z1226p256X8q2xZ9Q31'
+            >>> p2sh_scriptaddr(script='a914d85c2b7151a08794e345dd9a7c5fc94f01f9a58887', magicbyte=0x1c)  # Dogecoin
+            'D9534c13556425a34421c651494d823a52a788'
+        """
+        from .. import main
+
+        # import utils
+        if is_hex(script):
+            script = binascii.unhexlify(script)
+        RIPEMD_160_hash_hex_str: str = main.hash160(string=script)
+        base58_encoded_with_leading_zeros: str = main.hex_to_b58check(
+            inp=RIPEMD_160_hash_hex_str,
+            magicbyte=self.script_magicbyte,
+        )
+        return base58_encoded_with_leading_zeros
 
     def p2sh_segwit_addr(self, script: str) -> str:
         """
@@ -2007,7 +2039,9 @@ class BaseCoin:
                 txobj["witness"].append(witness)
         return txobj
 
-    def signall(self, txobj: Union[str, Tx], priv: PrivateKeySignAllType) -> Tx:
+    def signall_original(
+        self, txobj: Union[str, Tx], priv: PrivateKeySignAllType
+    ) -> Tx:
         """
         Sign all inputs to a transaction using a private key.
         Priv is either a private key or a dictionary of address keys and private key values
@@ -2022,6 +2056,64 @@ class BaseCoin:
         else:
             for i in range(len(txobj["ins"])):
                 txobj = self.sign(txobj, i, priv)
+        return txobj
+
+    # def signall(
+    #     self,
+    #     txobj: Union[str, Tx],
+    #     priv: PrivateKeySignAllType,
+    # ) -> Tx:
+    #     """
+    #     Sign all inputs to a transaction using a private key.
+    #     Priv is either a private key or a dictionary of address keys and private key values
+    #     """
+    #     if not isinstance(txobj, dict):
+    #         txobj = deserialize(tx=txobj)
+    #     if isinstance(priv, dict):
+    #         for i, inp in enumerate(txobj["ins"]):
+    #             addr = inp["address"]
+    #             k = priv[addr]
+    #             txobj = self.sign(txobj=txobj, i=i, priv=k)
+    #     else:
+    #         for i in range(len(txobj["ins"])):
+    #             txobj = self.sign(txobj=txobj, i=i, priv=priv)
+    #     return txobj
+
+    def signall(
+        self,
+        txobj: Union[str, Tx],
+        priv: PrivateKeySignAllType,
+    ) -> Tx:
+        """
+        Signs all inputs of a transaction using a private key.
+
+        Args:
+            self: The instance of the class calling this method.
+            txobj: The transaction object or its serialized representation as a string.
+            priv: The private key to use for signing. It can be either a single private key or a dictionary where keys are addresses and values are corresponding private keys.
+
+        Returns:
+            Tx: The signed transaction object.
+
+        Raises:
+            None.
+
+        Notes:
+            This function iterates through each input of the transaction and
+            calls the `self.sign` method to sign the input using the provided private key.
+            If `priv` is a dictionary, it uses the private key associated
+            with the address of the input.
+        """
+        if not isinstance(txobj, dict):
+            txobj = deserialize(tx=txobj)
+        if isinstance(priv, dict):
+            for i, inp in enumerate(txobj["ins"]):
+                addr: str = inp["address"]
+                k: str = priv[addr]
+                txobj = self.sign(txobj=txobj, i=i, priv=k)
+        else:
+            for i in range(len(txobj["ins"])):
+                txobj = self.sign(txobj=txobj, i=i, priv=priv)
         return txobj
 
     def multisign(
@@ -2546,6 +2638,30 @@ class BaseCoin:
         )
 
     async def inspect(self, tx: Union[str, Tx]) -> TXInspectType:
+        if not isinstance(tx, dict):
+            tx = deserialize(tx)
+        isum = 0
+        ins = {}
+        for _in in tx["ins"]:
+            h = _in["tx_hash"]
+            i = _in["tx_pos"]
+            prevout = (await anext(self.get_txs(h)))["outs"][i]
+            isum += prevout["value"]
+            a = self.scripttoaddr(prevout["script"])
+            ins[a] = ins.get(a, 0) + prevout["value"]
+        outs = []
+        osum = 0
+        for _out in tx["outs"]:
+            outs.append(
+                {
+                    "address": self.scripttoaddr(_out["script"]),
+                    "value": _out["value"],
+                }
+            )
+            osum += _out["value"]
+        return {"fee": isum - osum, "outs": outs, "ins": ins}
+
+    async def inspect_2(self, tx: Union[str, Tx]) -> TXInspectType:
         if not isinstance(tx, dict):
             tx = deserialize(tx)
         isum = 0

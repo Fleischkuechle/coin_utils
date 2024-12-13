@@ -4,11 +4,11 @@ from cryptos.types import Tx
 from Create_Raw_Transaction_Helper_V2 import Create_Raw_Transaction_Helper_V2
 
 
-class Create_Raw_Transaction_Doge_V2:
+class Create_Raw_Transaction_Btc_V2:
     def __init__(
         self,
     ):
-        self.coin_symbol: str = "doge"
+        self.coin_symbol: str = "btc"
         self.testnet: bool = False
         self.create_raw_transaction_helper_v2: Create_Raw_Transaction_Helper_V2 = (
             Create_Raw_Transaction_Helper_V2(
@@ -57,26 +57,16 @@ class Create_Raw_Transaction_Doge_V2:
 
 
 async def test():
-
+    frm_pub_address: str = (
+        "bc1qte0s6pz7gsdlqq2cf6hv5mxcfksykyyyjkdfd5"  # mainnet address
+    )
+    # to_pub_address: str = "39C7fxSzEACPjM78Z7xdPxhf7mKxJwvfMJ"
+    # to_pub_address: str = "myLktRdRh3dkK3gnShNj5tZsig6J1oaaJW"
+    # to_pub_address: str = "myLktRdRh3dkK3gnShNj5tZsig6J1oaaJW"  # testnet address
+    to_pub_address: str = "1PuJjnF476W3zXfVYmJfGnouzFDAXakkL4"  # mainnet address
     print_to_terminal: bool = True
-    # this is using the correct private key that corresponds with the address from
-    # should throw an exception because not enough funds.
-    # coin_symbol: str = "doge"
 
-    # # example address (empty no funds ) created with: Create_Address_Doge.py
-    # # doge:Private Key:        dc857bd464cc2bd3f4c162a078a36d7f38fcf140788de853313a2e8431256c95
-    # # doge:Public_address:     DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o
-    # # ---------example empty address
-    # frm_pub_address: str = "DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o"  # empty address
-    # to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
-
-    # my test addresses with funds-------------
-    # test address 300 doge 1 (now ca 269)
-    frm_pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"
-    to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
-    # ------------------------------------------
-
-    atomic_value_to_spent: float = 3000000000  # in atomic value (satoshis)
+    atomic_value_to_spent: float = 300  # in atomic (satoshis)
     # testnet: bool = False
     # when fee is none it calculates an average fee of the last i guess 6 blocks in the
     # blockchain
@@ -86,8 +76,8 @@ async def test():
     change_addr: Optional[str] = None
 
     # initialize the class
-    create_raw_transaction_doge_v2: Create_Raw_Transaction_Doge_V2 = (
-        Create_Raw_Transaction_Doge_V2()
+    create_raw_transaction_doge_v2: Create_Raw_Transaction_Btc_V2 = (
+        Create_Raw_Transaction_Btc_V2()
     )
     unsinged_tx: Optional[Tx] = None
     single_bytes_array_serialized_transaction: Optional[bytes] = None

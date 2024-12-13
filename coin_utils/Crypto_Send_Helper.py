@@ -26,11 +26,12 @@ class Crypto_Send_Helper:
         self.coin_symbol: str = coin_symbol
         self.testnet: bool = testnet
         self.some_valdiate_link: str = (
-            r"https://live.blockcypher.com/btc/address/1EfayE6j4nv6L13Q2BdDtys7Gs2b791ev4/"
+            "https://live.blockcypher.com/btc/address/1EfayE6j4nv6L13Q2BdDtys7Gs2b791ev4/"
         )
         self.some_validate_link_2: str = (
-            r"https://blockexplorer.one/dogecoin/testnet/address/ns3c8yGKiTL1TGgQru9CFbSwGxgLt3EHph"
+            "https://blockexplorer.one/dogecoin/testnet/address/ns3c8yGKiTL1TGgQru9CFbSwGxgLt3EHph"
         )
+        self.some_broadcast_link: str = "https://live.blockcypher.com/doge/pushtx/"
         self.coin: Union[
             coins.bitcoin.Bitcoin,
             coins.litecoin.Litecoin,
@@ -194,7 +195,8 @@ class Crypto_Send_Helper:
                 print(
                     f"at the following link you can if you want broadcast your transaction."
                 )
-                print("https://live.blockcypher.com/doge/pushtx/")
+                self.some_broadcast_link
+                print(self.some_broadcast_link)
 
 
 def test_wrong_priv_key_btc(

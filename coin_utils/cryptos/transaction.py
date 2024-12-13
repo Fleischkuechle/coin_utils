@@ -324,6 +324,23 @@ def deserialize_original(tx: AnyStr) -> Tx:
 
 
 def deserialize(tx: AnyStr) -> Tx:
+    """
+    Deserializes a transaction from a byte string or hex string into a transaction object.
+
+    Args:
+        tx: The serialized transaction data as a byte string or hex string.
+
+    Returns:
+        Tx: The deserialized transaction object.
+
+    Raises:
+        None.
+
+    Notes:
+        This function uses various helper functions (e.g., `read_as_int`, `read_var_int`, `read_bytes`, `read_var_string`)
+        which are not defined here but are assumed to exist in the context of the code.
+        It also relies on the `py3specials` module for decoding and encoding operations.
+    """
     from . import py3specials
 
     if isinstance(tx, str) and is_hex(tx):
@@ -867,7 +884,7 @@ def signature_form(
 
     i, hashcode = int(i), int(hashcode)
     if isinstance(tx, py3specials.string_or_bytes_types):
-        tx = deserialize(tx)
+        tx = deserialize(tx=tx)
     newtx = deepcopy(tx)
     for j, inp in enumerate(newtx["ins"]):
         if j == i:
@@ -1601,7 +1618,7 @@ def p2wpkh_nested_script(pubkey):
 # Output script to address representation
 
 
-def deserialize_script(script):
+def deserialize_script_original(script):
     if isinstance(script, str) and is_hex(script):
         return json_changebase(
             deserialize_script(binascii.unhexlify(script)), lambda x: safe_hexlify(x)
@@ -1618,6 +1635,56 @@ def deserialize_script(script):
         elif code <= 78:
             szsz = pow(2, code - 76)
             sz = decode(script[pos + szsz : pos : -1], 256)
+            out.append(script[pos + 1 + szsz : pos + 1 + szsz + sz])
+            pos += 1 + szsz + sz
+        elif code <= 96:
+            out.append(code - 80)
+            pos += 1
+        else:
+            out.append(code)
+            pos += 1
+    return out
+
+
+def deserialize_script(script: bytes) -> list:
+    """
+    Deserializes a script, converting it from a byte string to a list of script elements.
+
+    This function takes a script in byte string format and parses it according to the Bitcoin Script language rules. It returns a list of script elements, which can include:
+
+    * **None:** Represents an empty script element.
+    * **bytes:** Represents a data element, containing raw bytes.
+    * **int:** Represents an opcode, representing a specific operation in the Bitcoin Script language.
+
+    Args:
+        script (bytes): The script to deserialize, in byte string format.
+
+    Returns:
+        list: A list of script elements representing the deserialized script.
+
+    Example:
+        >>> deserialize_script(binascii.unhexlify('76a914d85c2b7151a08794e345dd9a7c5fc94f01f9a5888788ac'))
+        [76, b'a914d85c2b7151a08794e345dd9a7c5fc94f01f9a58887', 88, 172]
+    """
+    from . import py3specials
+
+    if isinstance(script, str) and is_hex(script):
+        return json_changebase(
+            deserialize_script(binascii.unhexlify(script)),
+            lambda x: py3specials.safe_hexlify(a=x),
+        )
+    out, pos = [], 0
+    while pos < len(script):
+        code = py3specials.from_byte_to_int(script[pos])
+        if code == 0:
+            out.append(None)
+            pos += 1
+        elif code <= 75:
+            out.append(script[pos + 1 : pos + 1 + code])
+            pos += 1 + code
+        elif code <= 78:
+            szsz = pow(2, code - 76)
+            sz = py3specials.decode(script[pos + szsz : pos : -1], 256)
             out.append(script[pos + 1 + szsz : pos + 1 + szsz + sz])
             pos += 1 + szsz + sz
         elif code <= 96:
@@ -1769,7 +1836,54 @@ def mk_multisig_script(*args):  # [pubs],k or pub1,pub2...pub[n],M
 # Signing and verifying
 
 
-def verify_tx_input(tx, i, script, sig, pub):
+def verify_tx_input_original(tx, i, script, sig, pub):
+    if is_hex(tx):
+        tx = binascii.unhexlify(tx)
+    if is_hex(script):
+        script = binascii.unhexlify(script)
+    if isinstance(script, string_types) and is_hex(script):
+        sig = safe_hexlify(sig)
+    hashcode = decode(sig[-2:], 16)
+    modtx = signature_form(tx, int(i), script, hashcode)
+    return ecdsa_tx_verify(modtx, sig, pub, hashcode)
+
+
+def verify_tx_input(
+    tx: Union[bytes, AnyStr],
+    i: int,
+    script: Union[bytes, AnyStr],
+    sig: bytes,
+    pub: bytes,
+) -> bool:
+    """
+    Verifies the signature of a transaction input.
+
+    This function checks if the provided signature is valid for the given transaction input,
+    scriptPubKey, and public key.
+    It first converts the transaction data, script, and signature to bytes if
+    they are hex strings. Then, it extracts the
+    hash code from the signature and creates a modified transaction for verification.
+    Finally, it uses the `ecdsa_tx_verify`
+    function to verify the signature against the modified transaction, public key,
+    and hash code.
+
+    Args:
+        tx: The serialized transaction data as bytes or hex string.
+        i: The index of the input to verify.
+        script: The scriptPubKey of the input as bytes or hex string.
+        sig: The signature to verify as bytes.
+        pub: The public key to use for verification as bytes.
+
+    Returns:
+        bool: True if the signature is valid, False otherwise.
+
+    Raises:
+        None.
+
+    Notes:
+        This function relies on several external functions like `is_hex`, `binascii.unhexlify`, `safe_hexlify`, `decode`,
+        `signature_form`, and `ecdsa_tx_verify` to perform the verification process.
+    """
     if is_hex(tx):
         tx = binascii.unhexlify(tx)
     if is_hex(script):

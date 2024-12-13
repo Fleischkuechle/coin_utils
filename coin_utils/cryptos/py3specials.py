@@ -318,8 +318,8 @@ def bin_to_b58check(inp: bytes, magicbyte: int = 0) -> str:
     It includes a checksum and a magic byte to ensure data integrity and identify the data type.
 
     Args:
-        inp: The binary data to encode.
-        magicbyte: An optional magic byte to prepend to the data.
+        inp(bytes): The binary data to encode.
+        magicbyte(int): An optional magic byte to prepend to the data.
 
     Returns:
         The Base58Check encoded string.
@@ -398,9 +398,9 @@ def bin_to_b58check(inp: bytes, magicbyte: int = 0) -> str:
     leading_zeros: str = "1" * leadingzbytes
     base58_encoded: str = changebase(string=encoded_data, frm=256, to=58)
 
-    final_encoded: str = leading_zeros + base58_encoded
+    base58_encoded_with_leading_zeros: str = leading_zeros + base58_encoded
 
-    return final_encoded
+    return base58_encoded_with_leading_zeros
 
 
 def bytes_to_hex_string(b: Union[int, bytes, List[str], List[int]]) -> str:

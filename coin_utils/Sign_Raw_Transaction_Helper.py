@@ -1,18 +1,16 @@
-import aiorpcx
 import asyncio
-import sys
 from typing import Callable, Any, Optional, Union
 
 from cryptos import transaction
 from cryptos import script_utils
 from cryptos import coins_async
 from cryptos import coins
-from cryptos.types import Tx
+from cryptos.types import TXInspectType, Tx
 
 from Get_Expected_Address_Helper import Get_Expected_Address_Helper
 
 
-class Create_Raw_Transaction_Helper_V2:
+class Sign_Raw_Transaction_Helper:
     def __init__(
         self,
         coin_symbol: str,
@@ -22,14 +20,15 @@ class Create_Raw_Transaction_Helper_V2:
         self.coin_symbol: str = coin_symbol
         self.testnet: bool = testnet
         self.some_valdiate_link: str = (
-            r"https://live.blockcypher.com/btc/address/1EfayE6j4nv6L13Q2BdDtys7Gs2b791ev4/"
+            "https://live.blockcypher.com/btc/address/1EfayE6j4nv6L13Q2BdDtys7Gs2b791ev4/"
         )
         self.some_validate_link_2: str = (
-            r"https://blockexplorer.one/dogecoin/testnet/address/ns3c8yGKiTL1TGgQru9CFbSwGxgLt3EHph"
+            "https://blockexplorer.one/dogecoin/testnet/address/ns3c8yGKiTL1TGgQru9CFbSwGxgLt3EHph"
         )
         self.good_fee_info: str = (
-            r"https://learnmeabitcoin.com/technical/transaction/fee/#sats-per-vbyte"
+            "https://learnmeabitcoin.com/technical/transaction/fee/#sats-per-vbyte"
         )
+        self.some_broadcast_link: str = "https://live.blockcypher.com/doge/pushtx/"
         self.coin: Union[
             coins.bitcoin.Bitcoin,
             coins.litecoin.Litecoin,
@@ -75,6 +74,7 @@ class Create_Raw_Transaction_Helper_V2:
         max_key_length = max(len(key) for key in data)
 
         # Print the header row
+
         print("-" * (max_key_length + 15))
         print(f"| {'Key':>{max_key_length}} | {'Value':<15} |")
         print("-" * (max_key_length + 15))
@@ -87,6 +87,7 @@ class Create_Raw_Transaction_Helper_V2:
             if isinstance(value, list):
                 # Handle lists with nested dictionaries
                 for i, item in enumerate(value):
+
                     print(f"| {' '*4}{key}: {i} |")
                     for inner_key, inner_value in item.items():
                         if inner_key == "value":
@@ -97,6 +98,15 @@ class Create_Raw_Transaction_Helper_V2:
                             print(
                                 f"| {' '*8}{inner_key:>{max_key_length}} | {inner_value:<15} | {atomic}  ({coin_value_formated} {self.coin_symbol})"
                             )
+                        elif inner_key == "fee":
+                            coin_value_formated: str = self.fromat_to_full_coin_value(
+                                atomic_value=inner_value
+                            )
+
+                            print(
+                                f"| {' '*8}{inner_key:>{max_key_length}} | {inner_value:<15} | {atomic}  ({coin_value_formated} {self.coin_symbol})"
+                            )
+
                         else:
                             print(
                                 f"| {' '*8}{inner_key:>{max_key_length}} | {inner_value:<15} |"
@@ -112,91 +122,113 @@ class Create_Raw_Transaction_Helper_V2:
                     )
                 print("-" * (max_key_length + 15))
             else:
-                print(f"| {key:>{max_key_length}} | {str(value):<15} |")
-                print("-" * (max_key_length + 15))
+                if key == "fee":
+                    coin_value_formated: str = self.fromat_to_full_coin_value(
+                        atomic_value=value
+                    )
 
-    async def create_unsigned_transaction_temp(
+                    print(
+                        f"| {key:>{max_key_length}} | {str(value):<15} | {atomic}  ({coin_value_formated} {self.coin_symbol})"
+                    )
+                    print("-" * (max_key_length + 15))
+                else:
+                    print(f"| {key:>{max_key_length}} | {str(value):<15} |")
+                    print("-" * (max_key_length + 15))
+
+    def print_serialized_signed_tx(self, singed_tx_serialized: str):
+        print(
+            f"signed transaction serialized(https://live.blockcypher.com/btc/decodetx/):"
+        )
+        print(" ")
+        print(singed_tx_serialized)
+        print(self.line_symbol * self.line_length)
+        print(f"at the following link you can if you want broadcast your transaction.")
+        print(self.some_broadcast_link)
+        print(self.line_symbol * self.line_length)
+
+    async def sign_unsigned_transaction(
         self,
         coin: str,
         testnet: bool,
-        addr: str,
-        to: str,
-        amount: int,
-        fee: float = None,
-        change_addr: Optional[str] = None,
+        unsigned_serialized_tx: str,
+        privkey: Optional[str] = None,
         print_to_terminal: bool = True,
-        # privkey: Optional[str] = None,
-        # broadcast: bool = False,
-    ) -> Optional[Tx]:
+    ) -> Optional[tuple[Tx, bytes]]:
+        # transaction.verify_tx_input(tx=unsigned_serialized_tx,i=0,)
+        singed_tx: Optional[Tx] = None
+        singed_tx_serialized: bytes = None
+        print(" ")
+        print(self.line_symbol * self.line_length)
+        print(f"starting signing this unsigned_serialized_tx:")
+        print(" ")
+        print(f"{unsigned_serialized_tx}")
+        print(self.line_symbol * self.line_length)
+        # transaction.verify_tx_input(tx=unsigned_serialized_tx,i=0,script=)
         base_coin: coins_async.BaseCoin = script_utils.get_coin(coin, testnet=testnet)
-        # address_match: bool = False
-        # address_match = self.get_expected_address_helper.address_check(
-        #     coin=coin,
-        #     testnet=testnet,
-        #     addr=addr,
-        #     privkey=privkey,
+
+        # this is doing a online look up
+        # deserialized_tx3: TXInspectType = await base_coin.inspect(
+        #     tx=unsigned_serialized_tx
         # )
-
-        # if address_match:
-        unsinged_tx: Optional[Tx] = None
-        single_bytes_array_serialized_transaction: bytes = None
-        try:
-            unsinged_tx: Tx = await base_coin.preparetx(
-                frm=addr,
-                to=to,
-                value=amount,
-                fee=fee,
-                change_addr=change_addr,
-            )
-        except Exception as e:  # Catch any other exception
-            print(self.line_symbol * self.line_length)
-            print(f" exception occurred: {e}")
-            print(f"process stopped...")
-            print(self.line_symbol * self.line_length)
-            return
-
-        if unsinged_tx:
-            single_bytes_array_serialized_transaction = transaction.serialize(
-                txobj=unsinged_tx
-            )
-        if print_to_terminal:
-            print(self.line_symbol * self.line_length)
-            print(f"raw transaction (unsigned tx):")
-            self.print_pretty_4(data=unsinged_tx)
-            print(self.line_symbol * self.line_length)
-
-            print(self.line_symbol * self.line_length)
-            print(
-                f"raw transaction serialized(https://live.blockcypher.com/btc/decodetx/):"
-            )
-            print(transaction.serialize(txobj=unsinged_tx))
-            print(self.line_symbol * self.line_length)
-
-        return unsinged_tx, single_bytes_array_serialized_transaction
-
-        # this is the signing part of the transaction which should be made offline
-        # # print(tx)
-        # singed_tx: Tx = base_coin.signall(
-        #     txobj=unsinged_tx,
-        #     priv=privkey,
-        # )
+        # print(" ")
         # print(self.line_symbol * self.line_length)
         # print(
-        #     f"signed transaction serialized:(https://live.blockcypher.com/btc/decodetx/)"
+        #     f"coin.inspect(tx=unsigned_serialized_tx) (unsigned_serialized_tx transaction deserialized back):"
         # )
-        # print(transaction.serialize(singed_tx))
+        # self.print_pretty_4(data=deserialized_tx3)
         # print(self.line_symbol * self.line_length)
-        # print(f"signed transaction (signed tx):")
-        # print(self.line_symbol * self.line_length)
-        # self.print_pretty_4(data=singed_tx)
-        # counter: int = 0
-        # for out in singed_tx["outs"]:
-        #     script = out["script"]
-        #     out_address: str = base_coin.output_script_to_address(script=script)
-        #     print(f"out_address {counter}= {out_address}")
-        #     counter = counter + 1
-        # # print(tx)
-        # print(self.line_symbol * self.line_length)
+
+        unsigned_deserialized_tx: Optional[Tx] = None
+        unsigned_deserialized_tx: Tx = transaction.deserialize(
+            tx=unsigned_serialized_tx
+        )
+        # test: str = base_coin.scripttoaddr(
+        #     script=unsigned_deserialized_tx["ins"][0]["tx_hash"]
+        # )
+        # print(test)
+        # inputs_counter: int = 0
+        # for input in unsigned_deserialized_tx["ins"]:
+        #     input_script = input["tx_hash"]
+        #     input_address: str = transaction.script_to_pk(script=input_script)
+        #     deserialized_script = transaction.deserialize_script(script=input_script)
+
+        #     # input_address: str = base_coin.output_script_to_address(script=input_script)
+        #     # input_address: str = base_coin.p2sh_scriptaddr(script=input_script)
+        #     # input_address: str = base_coin.scripttoaddr(script=input_script)
+        #     print(f"input_address {inputs_counter}= {input_address}")
+        #     inputs_counter = inputs_counter + 1
+
+        singed_tx = base_coin.signall(
+            txobj=unsigned_deserialized_tx,
+            priv=privkey,
+        )
+        singed_tx_serialized = transaction.serialize(txobj=singed_tx)
+        if print_to_terminal:
+
+            # print(self.line_symbol * self.line_length)
+            # print(
+            #     f"signed transaction serialized(https://live.blockcypher.com/btc/decodetx/):"
+            # )
+            # print(singed_tx_serialized)
+            # print(
+            #     f"at the following link you can if you want broadcast your transaction."
+            # )
+            # print(self.some_broadcast_link)
+            # print(self.line_symbol * self.line_length)
+
+            print(f"signed transaction (signed tx):")
+            print(self.line_symbol * self.line_length)
+            self.print_pretty_4(data=singed_tx)
+            counter: int = 0
+            for out in singed_tx["outs"]:
+                script = out["script"]
+                out_address: str = base_coin.output_script_to_address(script=script)
+                print(f"out_address {counter}= {out_address}")
+                counter = counter + 1
+            # print(tx)
+            print(self.line_symbol * self.line_length)
+
+            self.print_serialized_signed_tx(singed_tx_serialized=singed_tx_serialized)
         # if broadcast:
         #     try:
         #         result = await base_coin.pushtx(singed_tx)
@@ -209,6 +241,7 @@ class Create_Raw_Transaction_Helper_V2:
         #         f"at the following link you can if you want broadcast your transaction."
         #     )
         #     print("https://live.blockcypher.com/doge/pushtx/")
+        return singed_tx, unsigned_deserialized_tx
 
     async def create_unsigned_transaction_original(
         self,
@@ -500,18 +533,19 @@ async def test_doge():
     # should throw an exception because not enough funds.
     coin_symbol: str = "doge"
 
-    # # example address (empty no funds ) created with: Create_Address_Doge.py
-    # # doge:Private Key:        dc857bd464cc2bd3f4c162a078a36d7f38fcf140788de853313a2e8431256c95
-    # # doge:Public_address:     DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o
-    # # ---------example empty address
-    # frm_pub_address: str = "DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o"  # empty address
-    # to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
-
-    # my test addresses with funds-------------
-    # test address 300 doge 1 (now ca 269)
-    frm_pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"
+    # example address (empty no funds ) created with: Create_Address_Doge.py
+    # doge:Private Key:        dc857bd464cc2bd3f4c162a078a36d7f38fcf140788de853313a2e8431256c95
+    # doge:Public_address:     DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o
+    # ---------example empty address
+    frm_pub_address: str = "DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o"  # empty address
+    privkey: str = "dc857bd464cc2bd3f4c162a078a36d7f38fcf140788de853313a2e8431256c95"
     to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
-    # ------------------------------------------
+
+    # # my test addresses with funds-------------
+    # # test address 300 doge 1 (now ca 269)
+    # frm_pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"
+    # to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    # # ------------------------------------------
 
     atomic_value_to_spent: float = 3000000000  # in atomic value (satoshis)
     testnet: bool = False
@@ -527,29 +561,30 @@ async def test_doge():
     #     print(
     #         f"you about to spent: {atomic_value_to_spent/100000000} {coin_symbol}. (atomic_value_to_spent/100000000(one hundred million))"
     #     )
+
+    # raw transaction serialized(https://live.blockcypher.com/btc/decodetx/):
+    unsigned_serialized_tx: str = (
+        "0100000001b7dd7cf4eeb15ebe9696f7cc69c621de1b013519f17c6ee6c7ff47a422cbdd650100000000ffffffff02005ed0b2000000001976a914f6e3932f804cfac0265aef07300821543c8e398788ac6c027996050000001976a9146e13278b5a189ad09c6a6279a83986d4dfb0883188ac00000000"
+    )
+
     # initialize the class
-    create_raw_transaction_helper_v2: Create_Raw_Transaction_Helper_V2 = (
-        Create_Raw_Transaction_Helper_V2(
+    sign_raw_transaction_helper: Sign_Raw_Transaction_Helper = (
+        Sign_Raw_Transaction_Helper(
             coin_symbol=coin_symbol,
             testnet=testnet,
         )
     )
-    unsinged_tx: Optional[Tx] = None
-    single_bytes_array_serialized_transaction: Optional[bytes] = None
+    singed_tx: Optional[Tx] = None
+    signed_serialized_tx: Optional[bytes] = None
     try:
 
-        unsinged_tx, single_bytes_array_serialized_transaction = (
-            await create_raw_transaction_helper_v2.create_unsigned_transaction(
+        singed_tx, signed_serialized_tx = (
+            await sign_raw_transaction_helper.sign_unsigned_transaction(
                 coin=coin_symbol,
                 testnet=testnet,
-                addr=frm_pub_address,
-                to=to_pub_address,
-                amount=atomic_value_to_spent,
-                fee=fee,
-                change_addr=change_addr,
+                unsigned_serialized_tx=unsigned_serialized_tx,
+                privkey=privkey,
                 print_to_terminal=print_to_terminal,
-                # privkey=frm_pub_address_privkey,
-                # broadcast=broadcast,  # if true the transaction will be sent to the blockchain
             )
         )
 
@@ -557,10 +592,10 @@ async def test_doge():
         print(f"exception happend: {e}")
         return
 
-    if unsinged_tx:
+    if singed_tx:
         if print_to_terminal:
-            print(f"success creating the unsigned transaction")
-            # print(f"{single_bytes_array_serialized_transaction}")
+            print(f"success sigining transaction")
+            # print(f"{signed_serialized_tx}")
 
 
 if __name__ == "__main__":
