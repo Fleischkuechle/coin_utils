@@ -1,5 +1,4 @@
 import asyncio
-
 import aiorpcx
 
 
@@ -740,7 +739,7 @@ class BaseCoin:
         out_value = sum(o["value"] for o in tx["outs"])
         return in_value - out_value
 
-    async def pushtx(self, tx: Union[str, Tx]):
+    async def pushtx_original(self, tx: Union[str, Tx]):
         """
         Push/ Broadcast a transaction to the blockchain
         """
@@ -757,6 +756,28 @@ class BaseCoin:
                     message += f"Fee is {await self.calculate_fee(tx_obj)}"
                 raise TXRejectedError(message)
             raise TXInvalidError(message)
+
+    async def pushtx(self, tx: Union[str, Tx]):
+        """
+        Push/ Broadcast a transaction to the blockchain
+        """
+        if not isinstance(tx, str):
+            tx = serialize(tx)
+        try:
+            result = await self.client.broadcast_tx(raw_tx=tx)
+            return result
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")  # Print the exception details
+        #     return e
+        except (aiorpcx.jsonrpc.ProtocolError, aiorpcx.jsonrpc.RPCError) as e:
+            return e
+            # tx_obj = deserialize(tx)
+            # message = f"{tx_obj}\n{tx}\n{e.message}"
+            # if any(code == e.code for code in (1, -32600)):
+            #     if "fee" in e.message:
+            #         message += f"Fee is {await self.calculate_fee(tx_obj)}"
+            #     raise TXRejectedError(message)
+            # raise TXInvalidError(message)
 
     def privtopub_original(self, privkey: PrivkeyType) -> str:
         """

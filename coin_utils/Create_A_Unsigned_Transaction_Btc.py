@@ -1,20 +1,20 @@
 import asyncio
 from typing import Optional
 from cryptos.types import Tx
-from Create_Raw_Transaction_Helper_V2 import Create_Raw_Transaction_Helper_V2
+from Create_A_Unsigned_Transaction_Helper import Create_A_Unsigned_Transaction_Helper
 
 
-class Create_Raw_Transaction_Btc_V2:
+class Create_A_Unsigned_Transaction_Btc:
     def __init__(
         self,
     ):
         self.coin_symbol: str = "btc"
         self.testnet: bool = False
-        self.create_raw_transaction_helper_v2: Create_Raw_Transaction_Helper_V2 = (
-            Create_Raw_Transaction_Helper_V2(
-                coin_symbol=self.coin_symbol,
-                testnet=self.testnet,
-            )
+        self.create_a_unsigned_transaction_helper: (
+            Create_A_Unsigned_Transaction_Helper
+        ) = Create_A_Unsigned_Transaction_Helper(
+            coin_symbol=self.coin_symbol,
+            testnet=self.testnet,
         )
 
         self.line_length: int = 40
@@ -31,10 +31,10 @@ class Create_Raw_Transaction_Btc_V2:
     ) -> Optional[tuple[Tx, bytes]]:
 
         unsinged_tx: Optional[Tx] = None
-        single_bytes_array_serialized_transaction: bytes = None
+        unsigned_tx_serialized: bytes = None
         try:
-            unsinged_tx, single_bytes_array_serialized_transaction = (
-                await self.create_raw_transaction_helper_v2.create_unsigned_transaction(
+            unsinged_tx, unsigned_tx_serialized = (
+                await self.create_a_unsigned_transaction_helper.create_unsigned_transaction(
                     coin=self.coin_symbol,
                     testnet=self.testnet,
                     addr=addr,
@@ -51,9 +51,9 @@ class Create_Raw_Transaction_Btc_V2:
             print(f" exception occurred: {e}")
             print(f"process stopped...")
             print(self.line_symbol * self.line_length)
-            return unsinged_tx, single_bytes_array_serialized_transaction
+            return unsinged_tx, unsigned_tx_serialized
 
-        return unsinged_tx, single_bytes_array_serialized_transaction
+        return unsinged_tx, unsigned_tx_serialized
 
 
 async def test():
@@ -76,15 +76,15 @@ async def test():
     change_addr: Optional[str] = None
 
     # initialize the class
-    create_raw_transaction_doge_v2: Create_Raw_Transaction_Btc_V2 = (
-        Create_Raw_Transaction_Btc_V2()
+    create_a_unsigned_transaction_btc: Create_A_Unsigned_Transaction_Btc = (
+        Create_A_Unsigned_Transaction_Btc()
     )
     unsinged_tx: Optional[Tx] = None
-    single_bytes_array_serialized_transaction: Optional[bytes] = None
+    unsinged_tx_serialized: Optional[bytes] = None
     try:
 
-        unsinged_tx, single_bytes_array_serialized_transaction = (
-            await create_raw_transaction_doge_v2.create_unsigned_transaction(
+        unsinged_tx, unsinged_tx_serialized = (
+            await create_a_unsigned_transaction_btc.create_unsigned_transaction(
                 addr=frm_pub_address,
                 to=to_pub_address,
                 amount=atomic_value_to_spent,
@@ -97,6 +97,8 @@ async def test():
     except Exception as e:
         print(f"exception happend: {e}")
         return
+    if print_to_terminal:
+        print("completed successfully..")
 
 
 if __name__ == "__main__":
