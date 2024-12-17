@@ -1,7 +1,17 @@
-from cryptos import main
-from cryptos import coins
-from cryptos import script_utils
+if __name__ == "__main__":
+    from cryptos import main
+    from cryptos import coins
+    from cryptos import script_utils
 
+else:
+    try:
+        from .cryptos import main
+        from .cryptos import coins
+        from .cryptos import script_utils
+    except:
+        from cryptos import main
+        from cryptos import coins
+        from cryptos import script_utils
 from typing import Tuple, Union
 
 

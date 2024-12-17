@@ -56,7 +56,11 @@ from ..electrumx_client.types import (
     ElectrumXMultiTxResponse,
     ElectrumXVerboseTX,
 )
-from cryptos.utils import alist
+
+try:
+    from ...cryptos.utils import alist
+except:
+    from cryptos.utils import alist
 
 
 class TXInvalidError(BaseException):

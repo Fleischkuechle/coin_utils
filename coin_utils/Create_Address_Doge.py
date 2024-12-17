@@ -1,4 +1,8 @@
-from Create_Address_Helper import Create_Address_Helper
+if __name__ == "__main__":
+
+    from Create_Address_Helper import Create_Address_Helper
+else:
+    from .Create_Address_Helper import Create_Address_Helper
 from typing import Tuple
 
 

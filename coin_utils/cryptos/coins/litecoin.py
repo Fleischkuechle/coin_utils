@@ -4,7 +4,8 @@
 #     from cryptos.coins_async.litecoin import Litecoin as AsyncLitecoin
 
 
-from cryptos.coins_async.litecoin import Litecoin as AsyncLitecoin
+# from ...cryptos.coins_async.litecoin import Litecoin as AsyncLitecoin
+from ..coins_async.litecoin import Litecoin as AsyncLitecoin
 from .base import BaseSyncCoin
 
 

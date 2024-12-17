@@ -5,8 +5,11 @@
 # except:
 #     from cryptos.coins_async.bitcoin_cash import BitcoinCash as AsyncBitcoinCash
 
+try:
+    from ..coins_async.bitcoin_cash import BitcoinCash as AsyncBitcoinCash
+except:
+    from cryptos.coins_async.bitcoin_cash import BitcoinCash as AsyncBitcoinCash
 
-from cryptos.coins_async.bitcoin_cash import BitcoinCash as AsyncBitcoinCash
 from .base import BaseSyncCoin
 
 

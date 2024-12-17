@@ -1,5 +1,6 @@
-from cryptos.coins_async import BaseCoin, Bitcoin, BitcoinCash, Dash, Litecoin, Doge
+# from ..cryptos.coins_async import BaseCoin, Bitcoin, BitcoinCash, Dash, Litecoin, Doge
 
+from .coins_async import BaseCoin, Bitcoin, BitcoinCash, Dash, Litecoin, Doge
 
 coins = {c.coin_symbol: c for c in (Bitcoin, Litecoin, BitcoinCash, Dash, Doge)}
 
