@@ -3,7 +3,7 @@ import aiorpcx
 
 
 from ..transaction import *
-from ..utils import is_hex
+from ..utils import is_hex, alist
 from binascii import unhexlify
 
 # from ..blocks import verify_merkle_proof, deserialize_header
@@ -57,10 +57,12 @@ from ..electrumx_client.types import (
     ElectrumXVerboseTX,
 )
 
-try:
-    from ...cryptos.utils import alist
-except:
-    from cryptos.utils import alist
+# try:
+#     from .. import utils
+#     #from ...cryptos.utils import alist
+# except:
+#     #from cryptos.utils import alist
+#     from cryptos import utils
 
 
 class TXInvalidError(BaseException):

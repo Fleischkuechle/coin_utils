@@ -34,11 +34,39 @@ import janus
 #     PubKeyType,
 # )
 
+# try:
+#     from ...cryptos.coins_async.base import BaseCoin
+#     from ...cryptos.utils import alist
+#     from ...cryptos.wallet import HDWallet
+#     from ...cryptos.electrumx_client.types import (
+#         ElectrumXBalanceResponse,
+#         ElectrumXMultiBalanceResponse,
+#         ElectrumXTx,
+#         ElectrumXMerkleResponse,
+#         ElectrumXUnspentResponse,
+#         ElectrumXMultiTxResponse,
+#         ElectrumXHistoryResponse,
+#     )
+#     from ...cryptos.types import (
+#         Tx,
+#         BlockHeader,
+#         BlockHeaderCallbackSync,
+#         AddressCallbackSync,
+#         AddressTXCallbackSync,
+#         MerkleProof,
+#         AddressBalance,
+#         TxOut,
+#         TxInput,
+#         TXInspectType,
+#         PrivateKeySignAllType,
+#         PrivkeyType,
+#         PubKeyType,
+#     )
 try:
-    from ...cryptos.coins_async.base import BaseCoin
-    from ...cryptos.utils import alist
-    from ...cryptos.wallet import HDWallet
-    from ...cryptos.electrumx_client.types import (
+    from ..coins_async.base import BaseCoin
+    from ..utils import alist
+    from ..wallet import HDWallet
+    from ..electrumx_client.types import (
         ElectrumXBalanceResponse,
         ElectrumXMultiBalanceResponse,
         ElectrumXTx,
@@ -47,7 +75,7 @@ try:
         ElectrumXMultiTxResponse,
         ElectrumXHistoryResponse,
     )
-    from ...cryptos.types import (
+    from ..types import (
         Tx,
         BlockHeader,
         BlockHeaderCallbackSync,

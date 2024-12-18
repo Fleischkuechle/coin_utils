@@ -1612,7 +1612,9 @@ def b58check_to_bin(inp: str) -> Tuple[int, bytes]:
 
     # leading_ones_count: int = len(re.match("^1*", inp).group(0))
     leading_ones_count: int = py3specials.count_leading_ones(binary_string=inp)
-    data: bytes = b"\x00" * leading_ones_count + changebase(string=inp, frm=58, to=256)
+    data: bytes = b"\x00" * leading_ones_count + py3specials.changebase(
+        string=inp, frm=58, to=256
+    )
     # assert bin_dbl_sha256(s=data[:-4])[:4] == data[-4:]
     # Calculate the checksum based on the data (excluding the existing checksum)
 
@@ -1621,11 +1623,11 @@ def b58check_to_bin(inp: str) -> Tuple[int, bytes]:
     double_sha256_hash: bytes = py3specials.bin_dbl_sha256(s=truncated_data)
     # checksum_calculated = bin_dbl_sha256(s=data[:-4])[:4]
     # Extract the first four bytes of the double_sha256_hash
-    checksum_calculated = double_sha256_hash[:4]
+    checksum_calculated: bytes = double_sha256_hash[:4]
     # checksum_calculated = py3specials.bin_dbl_sha256(s=data[:-4])[:4]
 
     # Extract the existing checksum from the data(extracting the last four bytes of the data)
-    checksum_stored = data[-4:]
+    checksum_stored: bytes = data[-4:]
 
     # Compare the calculated checksum with the stored checksum
     if checksum_calculated != checksum_stored:

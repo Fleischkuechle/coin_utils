@@ -1369,7 +1369,9 @@ def addr_to_pubkey_script(addr: str) -> str:
     """
     from . import main
 
-    magicbyte, decoded_binary_data_as_hexadecimal_string = main.b58check_to_hex(addr)
+    magicbyte, decoded_binary_data_as_hexadecimal_string = main.b58check_to_hex(
+        inp=addr
+    )
     P2PKH_Pay_to_Public_Key_Hash_script_as_hexadecimal_string: str = mk_pubkey_script(
         pubkey_hash=decoded_binary_data_as_hexadecimal_string
     )
@@ -1417,7 +1419,7 @@ def hash_to_scripthash_script(hashbin: str) -> str:
     return opcodes.OP_HASH160.hex() + "14" + hashbin + opcodes.OP_EQUAL.hex()
 
 
-def mk_scripthash_script_original(addr: str):
+def mk_scripthash_script(addr: str):
     """
     Used in converting p2sh address to output script
     """
@@ -1427,7 +1429,7 @@ def mk_scripthash_script_original(addr: str):
     return hash_to_scripthash_script(hashbin=hashbin)
 
 
-def mk_scripthash_script(addr: str):
+def mk_scripthash_script_original(addr: str):
     """
     Used in converting p2sh address to output script
     """

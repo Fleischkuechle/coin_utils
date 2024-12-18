@@ -37,7 +37,7 @@ class Create_A_Unsigned_Transaction_Doge:
                 await self.create_a_unsigned_transaction_helper.create_unsigned_transaction(
                     coin=self.coin_symbol,
                     testnet=self.testnet,
-                    addr=addr,
+                    frm_addr=addr,
                     to=to,
                     amount=amount,
                     fee=fee,
@@ -49,7 +49,7 @@ class Create_A_Unsigned_Transaction_Doge:
         except Exception as e:  # Catch any other exception
             print(self.line_symbol * self.line_length)
             print(f" exception occurred: {e}")
-            print(f"process stopped...")
+            # print(f"process stopped...")
             print(self.line_symbol * self.line_length)
             return unsinged_tx, unsinged_tx_serialized
 
@@ -59,7 +59,7 @@ class Create_A_Unsigned_Transaction_Doge:
 async def test():
 
     print_to_terminal: bool = True
-    frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "
+    frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX"
     to_pub_address: str = "D8ju276w3J4k5UGeV8wVfoJ9S1DijxeK6k"
     # ------------------------------------------
 
@@ -78,6 +78,7 @@ async def test():
     )
     unsinged_tx: Optional[Tx] = None
     unsinged_tx_serialized: Optional[bytes] = None
+    print(" ")
     try:
 
         unsinged_tx, unsinged_tx_serialized = (
@@ -93,9 +94,9 @@ async def test():
 
     except Exception as e:
         print(f"exception happend: {e}")
-        return
-    if print_to_terminal:
-        print("completed successfully..")
+        return unsinged_tx, unsinged_tx_serialized
+    # if print_to_terminal:
+    #     print("process completed..")
 
 
 if __name__ == "__main__":

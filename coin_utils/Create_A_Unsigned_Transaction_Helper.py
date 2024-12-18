@@ -52,7 +52,7 @@ class Create_A_Unsigned_Transaction_Helper:
         self,
         coin: str,
         testnet: bool,
-        addr: str,
+        frm_addr: str,
         to: str,
         amount: int,
         fee: float = None,
@@ -91,11 +91,15 @@ class Create_A_Unsigned_Transaction_Helper:
         unsinged_tx: Optional[Tx] = None
         unsinged_tx_serialized: bytes = None
         if print_to_terminal:
-            self.print_in_terminal_helper.print_spent_coin_value(atomic_value=amount)
+            self.print_in_terminal_helper.print_crate_unsigned_transaction(
+                atomic_value=amount,
+                frm_addr=frm_addr,
+                to=to,
+            )
 
         try:
             unsinged_tx: Tx = await base_coin.preparetx(
-                frm=addr,
+                frm=frm_addr,
                 to=to,
                 value=amount,
                 fee=fee,
@@ -106,13 +110,13 @@ class Create_A_Unsigned_Transaction_Helper:
             print(f" exception occurred: {e}")
             print(f"process stopped...")
             print(self.line_symbol * self.line_length)
-            return
+            return unsinged_tx, unsinged_tx_serialized
 
         if unsinged_tx:
             unsinged_tx_serialized = transaction.serialize(txobj=unsinged_tx)
             if print_to_terminal:
                 self.print_in_terminal_helper.print_only_transaction(
-                    pub_address=addr,
+                    pub_address=frm_addr,
                     tx=unsinged_tx,
                     coin_symbol=coin,
                     to_pub_address=to,
@@ -160,7 +164,7 @@ async def test_doge():
             await create_a_unsigned_transaction_helper.create_unsigned_transaction(
                 coin=coin_symbol,
                 testnet=testnet,
-                addr=frm_pub_address,
+                frm_addr=frm_pub_address,
                 to=to_pub_address,
                 amount=atomic_value_to_spent,
                 fee=fee,

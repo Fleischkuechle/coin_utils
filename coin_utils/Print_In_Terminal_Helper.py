@@ -251,6 +251,23 @@ class Print_In_Terminal_Helper:
         )
         print(self.line_symbol * self.line_length)
 
+    def print_crate_unsigned_transaction(
+        self,
+        atomic_value: float,
+        frm_addr: str,
+        to: str,
+    ):
+        self.print_spent_coin_value(atomic_value=atomic_value)
+
+        print(self.line_symbol * self.line_length)
+
+        print(
+            f"Starting online lookup to get the unspents (UTXOS) from the from address ({self.coin_symbol}):"
+        )
+        print(f"from Address: {frm_addr}")
+        print(f"to Address: {to}")
+        print(self.line_symbol * self.line_length)
+
 
 def test():
     pass
