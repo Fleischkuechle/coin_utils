@@ -90,14 +90,12 @@ if __name__ == "__main__":
         Create_Raw_Transaction_And_Sign_doge()
     )
 
-    frm_pub_address: str = (
-        "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"  # test address 300 doge 1
-    )
+    frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "  # test address doge 1
     # frm_pub_address: str = "DEi98svyRa5HrgVRXqi3irmTi5VVmAbJus"
     frm_pub_address_priv_key: str = (
         "0abc485676fcb706a469bae8835f4cf4f94d8bc76c47d19fad3e1d84716f8c02"
     )
-    to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    to_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX"  # test address doge 2
     # to_pub_address: str = "DSXMsnjXYw3eQbz3VVg2QxFowir3H1yaYK"
     print_result: bool = True
 

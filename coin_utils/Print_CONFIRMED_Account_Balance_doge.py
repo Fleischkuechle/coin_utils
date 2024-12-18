@@ -54,8 +54,8 @@ if __name__ == "__main__":
     # pub_address: str = "DEi98svyRa5HrgVRXqi3irmTi5VVmAbJus"
     # pub_address: str = "DUQWE6mxqumqiMbrNfXLqFtSfNsQA1NevH" #empty test address
     # pub_address: str = "DJun5jqd9WUzXtDsHUM64Wica8omr7XXGw"
-    pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"  # test address 300 doge
-    # pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "  # test address 300 doge
+    # pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX"  # test address doge 2
     electrumX_balance_response: ElectrumXBalanceResponse = (
         print_CONFIRMED_account_balance_doge.print_CONFIRMED_account_balance(
             pub_address=pub_address

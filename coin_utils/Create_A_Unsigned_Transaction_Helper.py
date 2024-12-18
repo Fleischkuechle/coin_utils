@@ -131,23 +131,13 @@ class Create_A_Unsigned_Transaction_Helper:
 async def test_doge():
 
     print_to_terminal: bool = True
-    # this is using the correct private key that corresponds with the address from
-    # should throw an exception because not enough funds.
     coin_symbol: str = "doge"
 
-    # # example address (empty no funds ) created with: Create_Address_Doge.py
-    # # doge:Private Key:        dc857bd464cc2bd3f4c162a078a36d7f38fcf140788de853313a2e8431256c95
-    # # doge:Public_address:     DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o
-    # # ---------example empty address
-    # frm_pub_address: str = "DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o"  # empty address
-    # to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
-
-    # my test addresses with funds-------------
-    # test address 300 doge 1 (now ca 269)
-    frm_pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"
-    to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "
+    to_pub_address: str = "D8ju276w3J4k5UGeV8wVfoJ9S1DijxeK6k"  # test address doge 2
     # ------------------------------------------
-
+    frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "
+    to_pub_address: str = "D8ju276w3J4k5UGeV8wVfoJ9S1DijxeK6k"
     atomic_value_to_spent: float = 3000000000  # in atomic value (satoshis)
     testnet: bool = False
     # when fee is none it calculates an average fee of the last i guess 6 blocks in the

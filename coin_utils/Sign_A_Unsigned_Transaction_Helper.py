@@ -115,12 +115,12 @@ async def test_doge():
     # ---------example empty address
     frm_pub_address: str = "DPpF3wypNcxBB6dpc7QFVf3W2WMw6CWY9o"  # empty address
     privkey: str = "dc857bd464cc2bd3f4c162a078a36d7f38fcf140788de853313a2e8431256c95"
-    to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    to_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX"  # test address doge 2
 
     # # my test addresses with funds-------------
-    # # test address 300 doge 1 (now ca 269)
-    # frm_pub_address: str = "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"
-    # to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    # # test address doge 1 (now ca 269)
+    # frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "
+    # to_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX"  # test address doge 2
     # # ------------------------------------------
 
     atomic_value_to_spent: float = 3000000000  # in atomic value (satoshis)

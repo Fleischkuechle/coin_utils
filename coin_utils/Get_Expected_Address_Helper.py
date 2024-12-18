@@ -149,9 +149,9 @@ def test_doge():
     # doge:Public_address:     DDASXg8LNY1gu2b5kCC5H1BpkhoD9UQihS
     coin_symbol: str = "doge"
     testnet: bool = False
-    addr: str = "DDASXg8LNY1gu2b5kCC5H1BpkhoD9UQihS"  # test address 300 doge 1
+    addr: str = "DDASXg8LNY1gu2b5kCC5H1BpkhoD9UQihS"  # test address doge 1
     privkey: str = (
-        "ea71e78cf1733347abb13b153d04a468093f160303255459e0505d274fa100ab"  # the uncorrect private key for # test address 300 doge 1
+        "ea71e78cf1733347abb13b153d04a468093f160303255459e0505d274fa100ab"  # the uncorrect private key for # test address doge 1
     )
 
     get_expected_address_helper: Get_Expected_Address_Helper = (
@@ -178,9 +178,9 @@ def test_btc():
     # btc:pub_address_segwit: bc1qs0v6c4vtfcltqzt5f0zkm3ctr7lrrtvhkz3y8z (newer btc address version)
     coin_symbol: str = "btc"
     testnet: bool = False
-    addr: str = "bc1qs0v6c4vtfcltqzt5f0zkm3ctr7lrrtvhkz3y8z"  # test address 300 doge 1
+    addr: str = "bc1qs0v6c4vtfcltqzt5f0zkm3ctr7lrrtvhkz3y8z"  # test address doge 1
     privkey: str = (
-        "8c6c77a7eb3a4bbbe7e988c4c2b48fbaeb73a31bd3ab3dd2b415e25e10d7e6df"  # the uncorrect private key for # test address 300 doge 1
+        "8c6c77a7eb3a4bbbe7e988c4c2b48fbaeb73a31bd3ab3dd2b415e25e10d7e6df"  # the uncorrect private key for # test address doge 1
     )
 
     get_expected_address_helper: Get_Expected_Address_Helper = (

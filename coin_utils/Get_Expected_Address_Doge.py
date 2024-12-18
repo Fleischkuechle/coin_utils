@@ -38,9 +38,9 @@ def test():
     # Created with Create_Address_Doge.py
     # doge:Private Key:        ea71e78cf1733347abb13b153d04a468093f160303255459e0505d274fa100ab
     # doge:Public_address:     DDASXg8LNY1gu2b5kCC5H1BpkhoD9UQihS
-    addr: str = "DDASXg8LNY1gu2b5kCC5H1BpkhoD9UQihS"  # test address 300 doge 1
+    addr: str = "DDASXg8LNY1gu2b5kCC5H1BpkhoD9UQihS"  # test address doge 1
     privkey: str = (
-        "ea71e78cf1733347abb13b153d04a468093f160303255459e0505d274fa100ab"  # the uncorrect private key for # test address 300 doge 1
+        "ea71e78cf1733347abb13b153d04a468093f160303255459e0505d274fa100ab"  # the uncorrect private key for # test address doge 1
     )
     get_expected_address_doge: Get_Expected_Address_Doge = Get_Expected_Address_Doge()
 

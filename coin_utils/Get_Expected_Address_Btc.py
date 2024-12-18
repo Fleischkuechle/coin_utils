@@ -53,9 +53,9 @@ def test():
     # btc:Private Key:        8c6c77a7eb3a4bbbe7e988c4c2b48fbaeb73a31bd3ab3dd2b415e25e10d7e6df
     # btc:Public_address:     1JNiv4AHXzc2ZnN7oMaynQD5NjtZ2DZThy
     # btc:pub_address_segwit: bc1qs0v6c4vtfcltqzt5f0zkm3ctr7lrrtvhkz3y8z (newer btc address version)
-    addr: str = "bc1qs0v6c4vtfcltqzt5f0zkm3ctr7lrrtvhkz3y8z"  # test address 300 doge 1
+    addr: str = "bc1qs0v6c4vtfcltqzt5f0zkm3ctr7lrrtvhkz3y8z"  # test address doge 1
     privkey: str = (
-        "8c6c77a7eb3a4bbbe7e988c4c2b48fbaeb73a31bd3ab3dd2b415e25e10d7e6df"  # the uncorrect private key for # test address 300 doge 1
+        "8c6c77a7eb3a4bbbe7e988c4c2b48fbaeb73a31bd3ab3dd2b415e25e10d7e6df"  # the uncorrect private key for # test address doge 1
     )
     get_expected_address_btc: Get_Expected_Address_Btc = Get_Expected_Address_Btc()
     address_match: bool = False

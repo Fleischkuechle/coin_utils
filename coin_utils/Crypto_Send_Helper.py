@@ -276,17 +276,15 @@ def test_correct_priv_key_doge(
     # this is using the correct private key that corresponds with the address from
     # should throw an exception because not enough funds.
     coin_symbol: str = "doge"
-    frm_pub_address: str = (
-        "DFB7pEd9Ss7bYQywkiNywtR9kRXwjDD6Hw"  # test address 300 doge 1
+    frm_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX "  # test address doge 1
+    frm_pub_address_privkey: str = (
+        "super secret private key"  # the uncorrect private key for # test address doge 1
     )
     frm_pub_address_privkey: str = (
-        "super secret private key"  # the uncorrect private key for # test address 300 doge 1
-    )
-    frm_pub_address_privkey: str = (
-        "e9c12fec5482c3faadc138850fc0cb4f46293493392cf43e3fff829a2855e388"  # the uncorrect private key for # test address 300 doge 1
+        "e9c12fec5482c3faadc138850fc0cb4f46293493392cf43e3fff829a2855e388"  # the uncorrect private key for # test address doge 1
     )
 
-    to_pub_address: str = "DTeXPdfh1u5ziumrmZfMmLNVpbnMnseXdK"  # test address 0 doge 2
+    to_pub_address: str = "DHnBSmiXjLzw9xT6gZ6o5ycMTnGPi2yNXX"  # test address doge 2
     atomic_value_to_spent: float = 3000000000  # in atomic value (satoshis)
     testnet: bool = False
     fee: float = None
