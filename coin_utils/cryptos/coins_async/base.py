@@ -285,7 +285,7 @@ class BaseCoin:
     @staticmethod
     async def _tasks_with_inputs(
         coro: Callable, *args: Any, **kwargs
-    ) -> Generator[Tuple[Any, Any], None, None]:
+    ) -> Generator[Tuple[Any, Any], None, None]:  # type: ignore
         for i, result in enumerate(
             await asyncio.gather(*[coro(arg, **kwargs) for arg in args])
         ):

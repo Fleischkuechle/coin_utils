@@ -13,14 +13,14 @@ def bip32_hdm_script(*args):
             keys.append(args[i])
             i += 1
         req = int(args[i])
-        path = map(int, args[i+1:])
+        path = map(int, args[i + 1 :])
     pubs = sorted(map(lambda x: bip32_descend(x, path), keys))
     return mk_multisig_script(pubs, req)
 
 
 # BIP32 hierarchical deterministic multisig address
 def bip32_hdm_addr(*args):
-    return scriptaddr(bip32_hdm_script(*args))
+    return scriptaddr(bip32_hdm_script(*args))  # type: ignore
 
 
 # Setup a coinvault transaction
@@ -28,7 +28,7 @@ def setup_coinvault_tx(tx, script):
     txobj = deserialize(tx)
     N = deserialize_script(script)[-2]
     for inp in txobj["ins"]:
-        inp["script"] = serialize_script([None] * (N+1) + [script])
+        inp["script"] = serialize_script([None] * (N + 1) + [script])
     return serialize(txobj)
 
 
@@ -36,15 +36,15 @@ def setup_coinvault_tx(tx, script):
 def sign_coinvault_tx(tx, priv):
     pub = privtopub(priv)
     txobj = deserialize(tx)
-    subscript = deserialize_script(txobj['ins'][0]['script'])
+    subscript = deserialize_script(txobj["ins"][0]["script"])
     oscript = deserialize_script(subscript[-1])
     k, pubs = oscript[0], oscript[1:-2]
-    for j in range(len(txobj['ins'])):
-        scr = deserialize_script(txobj['ins'][j]['script'])
+    for j in range(len(txobj["ins"])):
+        scr = deserialize_script(txobj["ins"][j]["script"])
         for i, p in enumerate(pubs):
             if p == pub:
-                scr[i+1] = multisign(tx, j, subscript[-1], priv)
+                scr[i + 1] = multisign(tx, j, subscript[-1], priv)
         if len(filter(lambda x: x, scr[1:-1])) >= k:
             scr = [None] + filter(lambda x: x, scr[1:-1])[:k] + [scr[-1]]
-        txobj['ins'][j]['script'] = serialize_script(scr)
+        txobj["ins"][j]["script"] = serialize_script(scr)
     return serialize(txobj)
