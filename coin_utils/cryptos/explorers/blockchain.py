@@ -7,7 +7,7 @@ try:
 
     # from pybitcointools.cryptos.transaction import public_txhash
 except:
-    from pybitcointools.cryptos.transaction import public_txhash
+    from cryptos.transaction import public_txhash
 
     # from cryptos.transaction import public_txhash
 from .utils import parse_addr_args

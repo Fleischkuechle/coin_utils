@@ -524,7 +524,7 @@ class BaseSyncCoin:
     def pushtx(self, tx: Union[str, Tx]):
         return self._run_async("pushtx", tx)
 
-    def privtopub(self, privkey: PrivkeyType) -> str:
+    def privtopub(self, privkey: PrivkeyType) -> str:  # type: ignore
         """
         Converts a private key to a public key.
         (one of the core magic functions in this code)
@@ -646,8 +646,8 @@ class BaseSyncCoin:
         return self._async_coin.electrum_address(masterkey, n, for_change=for_change)
 
     def encode_privkey(
-        self, privkey: PrivkeyType, formt: str, script_type: str = "p2pkh"
-    ) -> PrivkeyType:
+        self, privkey: PrivkeyType, formt: str, script_type: str = "p2pkh"  # type: ignore
+    ) -> PrivkeyType:  # type: ignore
         return self._async_coin.encode_privkey(privkey, formt, script_type)
 
     def is_p2pkh(self, addr: str) -> bool:
@@ -725,10 +725,10 @@ class BaseSyncCoin:
             *args, num_required=num_required
         )
 
-    def sign(self, txobj: Union[Tx, AnyStr], i: int, priv: PrivkeyType) -> Tx:
+    def sign(self, txobj: Union[Tx, AnyStr], i: int, priv: PrivkeyType) -> Tx:  # type: ignore
         return self._async_coin.sign(txobj, i, priv)
 
-    def signall(self, txobj: Union[str, Tx], priv: PrivateKeySignAllType) -> Tx:
+    def signall(self, txobj: Union[str, Tx], priv: PrivateKeySignAllType) -> Tx:  # type: ignore
         return self._async_coin.signall(txobj, priv)
 
     def multisign(self, tx: Union[str, Tx], i: int, script: str, pk) -> Tx:
@@ -785,7 +785,7 @@ class BaseSyncCoin:
             "preparemultitx",
             frm,
             outs,
-            change_addr=change,
+            change_addr=change_addr,
             fee=fee,
             estimate_fee_blocks=estimate_fee_blocks,
         )
@@ -830,7 +830,7 @@ class BaseSyncCoin:
 
     def preparesignedtx(
         self,
-        privkey: PrivateKeySignAllType,
+        privkey: PrivateKeySignAllType,  # type: ignore
         frm: str,
         to: str,
         value: int,
@@ -851,7 +851,7 @@ class BaseSyncCoin:
 
     def send_to_multiple_receivers_tx(
         self,
-        privkey: PrivateKeySignAllType,
+        privkey: PrivateKeySignAllType,  # type: ignore
         addr: str,
         outs: List[TxOut],
         change_addr: str = None,
@@ -870,7 +870,7 @@ class BaseSyncCoin:
 
     def send(
         self,
-        privkey: PrivateKeySignAllType,
+        privkey: PrivateKeySignAllType,  # type: ignore
         frm: str,
         to: str,
         value: int,
@@ -973,7 +973,7 @@ class BaseSyncCoin:
     def pubtocashaddress(self, pubkey: str) -> str:
         return self._async_coin.pubtocashaddress(pubkey)
 
-    def privtocashaddress(self, privkey: PrivkeyType) -> str:
+    def privtocashaddress(self, privkey: PrivkeyType) -> str:  # type: ignore
         return self._async_coin.privtocashaddress(privkey)
 
     def legacy_addr_to_cash_address(self, addr: str) -> str:
@@ -995,5 +995,5 @@ class BaseSyncCoin:
     def calculate_fee(self, tx: Tx) -> int:
         return self._run_async("calculate_fee", tx)
 
-    def privtosegwitaddress(self, privkey: PrivkeyType) -> str:
+    def privtosegwitaddress(self, privkey: PrivkeyType) -> str:  # type: ignore
         return self._async_coin.privtosegwitaddress(privkey)
